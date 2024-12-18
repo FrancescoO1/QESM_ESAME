@@ -25,6 +25,11 @@ public class NodoIPN {
         return this.C_i_d_z = flusso.getp_z_i() + latenzaRete + this.q_z_i;    //latenzaRete rappresenterebbe t_i,z; q_z,i rappresenterebbe la mia externalities.
     }
 
+    public void decrementaCapacita(double quantita) {
+        this.L_z -= quantita;
+    }
+
+
     // Getter per la GUI
     public int getId() {
         return id;

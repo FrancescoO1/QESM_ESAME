@@ -6,6 +6,7 @@ public class Flusso {
     private double p_z_i; //tempo di preelaborazione del flusso
     private double T_i; //ritardo del flusso
     private double D_i; //flussi che mancano la deadline B_i, che negano così la quality of service
+    private double capacita; //R_i
 
     public Flusso(int id, double scadenza, double tempoPreElaborazione) {
         this.id = id;
@@ -13,11 +14,12 @@ public class Flusso {
         this.p_z_i = tempoPreElaborazione;
         this.T_i = 0.0;
         this.D_i = 0;
+        this.capacita = capacita;
     }
 
 
     public void calcolaT_i(double C_i_d_z) {
-        this.T_i = Math.max(0, C_i_d_z  - this.B_i);
+        this.T_i = Math.max(0, C_i_d_z - this.B_i);
     }  //calcola il ritardo del flusso, ovvero il task i, T_i è sempre zero se il tempo di completamento è minore o uguale alla scadenza B_i, capisco che rispetto la scadenza.
 
 
@@ -26,6 +28,14 @@ public class Flusso {
         if (flusso.getT_i() > 0) { //ovvero se T_i è maggiore di zero.
             this.D_i++;
         }
+    }
+
+    public double getCapacita() {
+        return capacita;
+    }
+
+    public void decrementaCapacita(double quantita) {
+        this.capacita -= quantita;
     }
 
     // Getter per la GUI
@@ -48,4 +58,6 @@ public class Flusso {
     public double getD_i() {
         return D_i;
     }
+
+
 }
