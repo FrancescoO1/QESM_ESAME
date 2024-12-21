@@ -32,7 +32,7 @@ public class Main {
         // Aggiungi flussi ai nodi sorgenti
         for (NodoSorgente nodoSorgente : nodiSorgenti) {
             for (int i = 0; i < NUMERO_FLUSSI_PER_NODO_SORGENTE; i++) {
-                Flusso flusso = new Flusso(i + 1, 2.0 - (i * 0.1), 0.5 + (i * 0.05), 1.0);
+                Flusso flusso = new Flusso(i + 1, 2.0 - (i * 0.1), 0.5 + (i * 0.05), 1.0);  //TODO: randomizza capcità flusso
                 nodoSorgente.aggiungiFlusso(flusso);
             }
         }
