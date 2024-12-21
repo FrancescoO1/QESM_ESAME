@@ -1,40 +1,44 @@
-import core.Flusso;
-import core.IPNInterface;
-import core.MatchingGame;
-import core.NodoIPN;
+import core.*;
+
 import javax.swing.*;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
+
 
 public class Main {
+
+    private static final int NUMERO_NODI_IPN = 3;
+    private static final int NUMERO_ITERAZIONI = 10;
+    private static final int NUMERO_FLUSSI_PER_NODO_SORGENTE = 5;
+    private static final int NUMERO_NODI_SORGENTE = 3;
+    private static final int CAPACITA_DISPONIBILE = 50;
+    private static final Random random = new Random();
+
     public static void main(String[] args) {
-        // Creazione di alcuni flussi con scadenze e tempi di elaborazione
-        List<Flusso> flussi = new ArrayList<>();
-        flussi.add(new Flusso(1, 2.0, 0.5));
-        flussi.add(new Flusso(2, 1.5, 0.6));
-        flussi.add(new Flusso(3, 1.8, 0.4));
-        flussi.add(new Flusso(4, 2.2, 0.7));
-        flussi.add(new Flusso(5, 1.7, 0.3));
-        flussi.add(new Flusso(6, 1.9, 0.8));
-        flussi.add(new Flusso(7, 2.1, 0.2));
-        flussi.add(new Flusso(8, 1.6, 0.9));
-        flussi.add(new Flusso(9, 2.3, 0.1));
-        flussi.add(new Flusso(10, 1.4, 0.5));
 
-        // Creazione di alcuni nodi IPN con capacità disponibili
+        // Creazione di nodi IPN con capacità disponibili
         List<NodoIPN> nodiIPN = new ArrayList<>();
-        nodiIPN.add(new NodoIPN(1, 2.0));
-        nodiIPN.add(new NodoIPN(2, 1.5));
-        nodiIPN.add(new NodoIPN(3, 1.8));
+        for (int i = 0; i < NUMERO_NODI_IPN; i++) {
+            NodoIPN nodoIPN = new NodoIPN(i + 1, random.nextGaussian() * 10 + CAPACITA_DISPONIBILE);
+            nodiIPN.add(nodoIPN);
+        }
 
-        // Creazione del gioco di matching
-        MatchingGame matchingGame = new MatchingGame(flussi, nodiIPN);
+        // Creazione di nodi sorgenti
+        List<NodoSorgente> nodiSorgenti = new ArrayList<>();
+        for (int i = 0; i < NUMERO_NODI_SORGENTE; i++) {
+            NodoSorgente nodoSorgente = new NodoSorgente(i + 1);
+            nodiSorgenti.add(nodoSorgente);
+        }
 
-        // Avvio dell'interfaccia grafica
-        new IPNInterface(matchingGame);
+        // Aggiungi flussi ai nodi sorgenti
+        for (NodoSorgente nodoSorgente : nodiSorgenti) {
+            for (int i = 0; i < NUMERO_FLUSSI_PER_NODO_SORGENTE; i++) {
+                Flusso flusso = new Flusso(i + 1, 2.0 - (i * 0.1), 0.5 + (i * 0.05), 1.0);
+                nodoSorgente.aggiungiFlusso(flusso);
+            }
+        }
+
+        Simulazione simulazione = new Simulazione(nodiIPN, nodiSorgenti, NUMERO_ITERAZIONI);
+        simulazione.eseguiSimulazione();
+
     }
 }
-
-
