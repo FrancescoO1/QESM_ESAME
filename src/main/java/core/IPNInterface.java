@@ -6,9 +6,10 @@ import java.awt.event.*;
 import java.util.*;
 import java.util.List;
 
-//TODO controlla che i flussi collagati all'ultima iterazione siano quelli dei log
-//TODO utilizzare la metrica dell'utilità per fare i grafici del paper
+
+//TODO FAI I GRAFICI
 //TODO cambiare i nomi nell'interfaccia grafica e farli tutti in italiano
+
 
 public class IPNInterface extends JFrame {
     private final MatchingGame matchingGame;

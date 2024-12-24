@@ -95,7 +95,7 @@ public class MatchingGame {
 
     public double calcolaPi() {
         double D_i_totale = flussiPerSorgente.values().stream()
-                .mapToDouble(Flusso::getD_i)
+                .mapToDouble(Flusso::calcolaD_i)
                 .sum();
         return D_i_totale / flussiPerSorgente.size();
     }

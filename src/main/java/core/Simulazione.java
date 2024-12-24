@@ -57,7 +57,8 @@ public class Simulazione {
                             NodoIPN nodoAssegnato = matchingGame.algoritmoMatching(flusso);
 
                             if (nodoAssegnato != null) {
-                                System.out.println("Flusso " + flusso.getId() + " assegnato a Nodo IPN " + nodoAssegnato.getId());
+                                System.out.println("Flusso " + flusso.getId() +  " del nodo sorgente " + sorgente.getId() + " assegnato a Nodo IPN " + nodoAssegnato.getId());
+                                System.out.println("Ritardo medio dei flussi: " + flusso.getT_i());
                             } else {
                                 System.out.println("Flusso " + flusso.getId() + " non assegnato a nessun Nodo IPN");
                             }
@@ -71,6 +72,9 @@ public class Simulazione {
                             });
                         }
                     }
+
+                    //stampa l'utilità del sistema
+                    System.out.println("Utilità del sistema: " + matchingGame.calcolaUtilita());
 
                     matchingGame.aggiornaPreferenceListFlusso_V_i_z();
                     printSystemState();

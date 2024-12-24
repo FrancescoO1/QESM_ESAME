@@ -6,7 +6,7 @@ public class Flusso {
     private final double p_z_i;      // tempo di preelaborazione del flusso
     private final double capacita;   // R_i
     private double T_i;             // ritardo del flusso
-    private double D_i;             // flussi che mancano la deadline B_i
+    private static double D_i;             // flussi che mancano la deadline B_i
 
     public Flusso(int id, double scadenza, double tempoPreElaborazione, double capacita) {
         this.id = id;
@@ -21,10 +21,11 @@ public class Flusso {
         this.T_i = Math.max(0, C_i_d_z - this.B_i);
     }
 
-    public void calcolaD_i(Flusso flusso) {
+    public static double calcolaD_i(Flusso flusso) {
         if (flusso.getT_i() > 0) {
-            this.D_i++;
+            D_i++;
         }
+        return D_i;
     }
 
     // Getters
