@@ -6,7 +6,9 @@ import java.awt.event.*;
 import java.util.*;
 import java.util.List;
 
-//TODO aggiorna la visualizzazione dell'interfaccia
+//TODO controlla che i flussi collagati all'ultima iterazione siano quelli dei log
+//TODO utilizzare la metrica dell'utilità per fare i grafici del paper
+//TODO cambiare i nomi nell'interfaccia grafica e farli tutti in italiano
 
 public class IPNInterface extends JFrame {
     private final MatchingGame matchingGame;
@@ -17,6 +19,7 @@ public class IPNInterface extends JFrame {
     private final Map<NodoIPN, Point> ipnPositions;
     private int currentStep = 0;
     private final NetworkPanel networkPanel;
+    private final JPanel legendPanel;
     private final Map<NodoIPN, Double> initialCapacities;
 
     private static int currentIteration = 0;
@@ -48,16 +51,32 @@ public class IPNInterface extends JFrame {
         // Create main components
         networkPanel = new NetworkPanel();
 
+        // fai in modo che il network panel abbia le scrollbars
+        JScrollPane scrollPane = new JScrollPane(networkPanel);
+        scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS);
+        scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+        add(scrollPane, BorderLayout.CENTER);
+
+
+        // Panel legenda
+        legendPanel = new JPanel();
+        legendPanel.setLayout(new BoxLayout(legendPanel, BoxLayout.Y_AXIS));
+        legendPanel.setBackground(new Color(240, 240, 240)); // Imposta uno sfondo simile
+        legendPanel.setBorder(BorderFactory.createLineBorder(Color.BLACK)); // Aggiungi un bordo
+
+
         // Add components to frame
-        add(networkPanel, BorderLayout.CENTER);
+        add(legendPanel, BorderLayout.EAST);
 
         // Initialize node positions
         initializePositions();
 
         // Set frame properties
-        setSize(1200, 800);
+        setExtendedState(JFrame.MAXIMIZED_BOTH);
         setLocationRelativeTo(null);
         setVisible(true);
+
+        updateLegendPanel();
     }
 
     public static void setCurrentIteration(int currentIteration) {
@@ -82,6 +101,51 @@ public class IPNInterface extends JFrame {
                     new Point(ipnX, startY + i * spacing));
         }
     }
+
+    private void updateLegendPanel() {
+        legendPanel.removeAll(); // Rimuovi tutti i componenti precedenti
+
+        // Titolo
+        JLabel titleLabel = new JLabel("Simulation Information:");
+        titleLabel.setFont(new Font("Arial", Font.BOLD, 12));
+        titleLabel.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10)); // Padding: top, left, bottom, right
+        legendPanel.add(titleLabel);
+
+        legendPanel.add(Box.createVerticalStrut(10)); // Spazio tra le righe
+
+        // Informazioni generali
+        JLabel totalIPNLabel = new JLabel("Total IPN Nodes: " + nodiIPN.size());
+        totalIPNLabel.setFont(new Font("Arial", Font.PLAIN, 12));
+        totalIPNLabel.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
+        legendPanel.add(totalIPNLabel);
+
+        JLabel totalSourceLabel = new JLabel("Total Source Nodes: " + nodiSorgente.size());
+        totalSourceLabel.setFont(new Font("Arial", Font.PLAIN, 12));
+        totalSourceLabel.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
+        legendPanel.add(totalSourceLabel);
+
+        legendPanel.add(Box.createVerticalStrut(10)); // Spazio tra le righe
+
+        // Capacità iniziale dei nodi IPN
+        JLabel initialCapacitiesLabel = new JLabel("Initial IPN Capacities:");
+        initialCapacitiesLabel.setFont(new Font("Arial", Font.PLAIN, 12));
+        initialCapacitiesLabel.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
+        legendPanel.add(initialCapacitiesLabel);
+
+        for (NodoIPN ipn : nodiIPN) {
+            JLabel ipnCapacityLabel = new JLabel(String.format("IPN%d: %.1f", ipn.getId(), initialCapacities.get(ipn)));
+            ipnCapacityLabel.setFont(new Font("Arial", Font.PLAIN, 12));
+            ipnCapacityLabel.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
+            legendPanel.add(ipnCapacityLabel);
+        }
+
+        legendPanel.add(Box.createVerticalStrut(10)); // Spazio aggiuntivo in basso
+
+        legendPanel.revalidate(); // Aggiorna il layout del pannello
+        legendPanel.repaint(); // Forza il ridisegno
+    }
+
+
 
     public void UpdateInterfaceStatus() {
         // Aggiorna la visibilità dei flussi basandosi sulle assegnazioni
@@ -121,6 +185,11 @@ public class IPNInterface extends JFrame {
         }
 
         @Override
+        public Dimension getPreferredSize() {
+            return new Dimension(1000, 2000); // Dimensione preferita maggiore per consentire lo scorrimento
+        }
+
+        @Override
         protected void paintComponent(Graphics g) {
             super.paintComponent(g);
             Graphics2D g2d = (Graphics2D) g;
@@ -128,51 +197,12 @@ public class IPNInterface extends JFrame {
                     RenderingHints.VALUE_ANTIALIAS_ON);
 
             // Disegna i componenti esistenti
-            drawInfoPanel(g2d);
             drawNodes(g2d);
             drawConnections(g2d);
             drawFlowTables(g2d);
             drawIterationCounter(g2d);
 
-            // Aggiungi la legenda dei flussi
-            drawFlowLegend(g2d);
         }
-
-        private void drawInfoPanel(Graphics2D g2d) {
-            int panelX = 20; // Posizionamento a sinistra
-            int panelY = getHeight() - 200; // Posizionamento in basso
-            int panelWidth = 280;
-            int panelHeight = 150;
-
-            // Draw panel background
-            g2d.setColor(new Color(240, 240, 240));
-            g2d.fillRect(panelX, panelY, panelWidth, panelHeight);
-            g2d.setColor(Color.BLACK);
-            g2d.drawRect(panelX, panelY, panelWidth, panelHeight);
-
-            // Draw information
-            g2d.setFont(new Font("Arial", Font.BOLD, 12));
-            int textY = panelY + 20;
-            g2d.drawString("Simulation Information:", panelX + 10, textY);
-            g2d.setFont(new Font("Arial", Font.PLAIN, 12));
-
-            textY += 20;
-            g2d.drawString("Total IPN Nodes: " + nodiIPN.size(), panelX + 10, textY);
-
-            textY += 20;
-            g2d.drawString("Total Source Nodes: " + nodiSorgente.size(), panelX + 10, textY);
-
-            textY += 20;
-            g2d.drawString("Initial IPN Capacities:", panelX + 10, textY);
-
-            textY += 20;
-            for (NodoIPN ipn : nodiIPN) {
-                g2d.drawString(String.format("IPN%d: %.1f", ipn.getId(),
-                        initialCapacities.get(ipn)), panelX + 20, textY);
-                textY += 15;
-            }
-        }
-
 
         private void drawNodes(Graphics2D g2d) {
             // Draw source nodes
@@ -275,16 +305,6 @@ public class IPNInterface extends JFrame {
             // Usa l'ID del flusso per generare un colore unico
             float hue = (flowId * 0.618033988749895f) % 1.0f; // Golden ratio per una distribuzione uniforme
             return Color.getHSBColor(hue, 0.8f, 0.9f);
-        }
-
-        private void drawFlowLegend(Graphics2D g2d) {
-            int legendX = 50;
-            int legendY = getHeight() - 100;
-            int lineLength = 30;
-            int spacing = 20;
-
-            g2d.setFont(new Font("Arial", Font.BOLD, 12));
-            g2d.setColor(Color.BLACK);
         }
 
         private void drawFlowTables(Graphics2D g2d) {

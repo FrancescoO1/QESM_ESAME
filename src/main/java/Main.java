@@ -6,10 +6,10 @@ import java.util.*;
 
 public class Main {
 
-    private static final int NUMERO_NODI_IPN = 3;
+    private static final int NUMERO_NODI_IPN = 5;
     private static final int NUMERO_ITERAZIONI = 10;
-    private static final int NUMERO_FLUSSI_PER_NODO_SORGENTE = 5;
-    private static final int NUMERO_NODI_SORGENTE = 3;
+    private static final int NUMERO_FLUSSI_PER_NODO_SORGENTE = 2;
+    private static final int NUMERO_NODI_SORGENTE = 7;
     private static final int CAPACITA_DISPONIBILE = 50;
     private static final int CAPACITA_FLUSSO = 2;
     private static final Random random = new Random();
