@@ -100,7 +100,7 @@ public class MatchingGame {
         return D_i_totale / flussiPerSorgente.size();
     }
 
-    public double calcolaUtilita() {
+    public String calcolaUtilita() {
         double pi = calcolaPi();
         double A = flussiPerSorgente.size() * nodiIPN.size();
         double somma = 0.0;
@@ -114,7 +114,13 @@ public class MatchingGame {
             }
         }
 
-        return 1 / (pi * somma / A);
+        double utilita =  1 / (pi * somma / A);
+
+        if (Double.isInfinite(utilita)) {
+            return "100.00%";
+        }
+
+        return String.format("%.2f%%", utilita * 100);
     }
 
 

@@ -58,7 +58,7 @@ public class Simulazione {
 
                             if (nodoAssegnato != null) {
                                 System.out.println("Flusso " + flusso.getId() +  " del nodo sorgente " + sorgente.getId() + " assegnato a Nodo IPN " + nodoAssegnato.getId());
-                                System.out.println("Ritardo medio dei flussi: " + flusso.getT_i());
+                                System.out.println("Ritardo del flusso: " + flusso.getT_i());
                             } else {
                                 System.out.println("Flusso " + flusso.getId() + " non assegnato a nessun Nodo IPN");
                             }
@@ -80,6 +80,7 @@ public class Simulazione {
                     printSystemState();
 
                     System.out.println("Fine iterazione " + iterazione);
+                    ipnInterface.updateLegendPanel(matchingGame);
                     System.out.println("----------------------------------\n");
                 }
 

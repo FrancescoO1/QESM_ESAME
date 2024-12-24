@@ -7,8 +7,9 @@ import java.util.*;
 import java.util.List;
 
 
-//TODO FAI I GRAFICI
+//TODO FAI I GRAFICI del paper in un'altra classe
 //TODO cambiare i nomi nell'interfaccia grafica e farli tutti in italiano
+
 
 
 public class IPNInterface extends JFrame {
@@ -50,7 +51,7 @@ public class IPNInterface extends JFrame {
         setLayout(new BorderLayout());
 
         // Create main components
-        networkPanel = new NetworkPanel();
+        networkPanel = new NetworkPanel(matchingGame);
 
         // fai in modo che il network panel abbia le scrollbars
         JScrollPane scrollPane = new JScrollPane(networkPanel);
@@ -77,11 +78,12 @@ public class IPNInterface extends JFrame {
         setLocationRelativeTo(null);
         setVisible(true);
 
-        updateLegendPanel();
+        updateLegendPanel(matchingGame);
     }
 
     public static void setCurrentIteration(int currentIteration) {
         IPNInterface.currentIteration = currentIteration;
+
     }
 
     private void initializePositions() {
@@ -101,10 +103,11 @@ public class IPNInterface extends JFrame {
             ipnPositions.put(nodiIPN.get(i),
                     new Point(ipnX, startY + i * spacing));
         }
+
     }
 
-    private void updateLegendPanel() {
-        legendPanel.removeAll(); // Rimuovi tutti i componenti precedenti
+    public void updateLegendPanel(MatchingGame matchingGame) {
+        legendPanel.removeAll();// Rimuovi tutti i componenti precedenti
 
         // Titolo
         JLabel titleLabel = new JLabel("Simulation Information:");
@@ -139,6 +142,12 @@ public class IPNInterface extends JFrame {
             ipnCapacityLabel.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
             legendPanel.add(ipnCapacityLabel);
         }
+
+        //utilità
+        JLabel utilityLabel = new JLabel("Utilità del sistema: " + matchingGame.calcolaUtilita());
+        utilityLabel.setFont(new Font("Arial", Font.PLAIN, 12));
+        utilityLabel.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
+        legendPanel.add(utilityLabel);
 
         legendPanel.add(Box.createVerticalStrut(10)); // Spazio aggiuntivo in basso
 
@@ -178,16 +187,20 @@ public class IPNInterface extends JFrame {
     }
 
 
+
+
     private class NetworkPanel extends JPanel {
         private static final int NODE_RADIUS = 30;
+        private final MatchingGame matchingGame;
 
-        public NetworkPanel() {
+        public NetworkPanel(MatchingGame matchingGame) {
             setBackground(Color.WHITE);
+            this.matchingGame = matchingGame;
         }
 
         @Override
         public Dimension getPreferredSize() {
-            return new Dimension(1000, 2000); // Dimensione preferita maggiore per consentire lo scorrimento
+            return new Dimension(1000, 1800); // Dimensione preferita maggiore per consentire lo scorrimento
         }
 
         @Override
@@ -348,8 +361,18 @@ public class IPNInterface extends JFrame {
         private void drawIterationCounter(Graphics2D g2d) {
             g2d.setColor(Color.BLACK);
             g2d.setFont(new Font("Arial", Font.BOLD, 14));
+
             String iterationText = "Iteration: " + currentIteration;
-            g2d.drawString(iterationText, getWidth() - 150, getHeight() - 20);
+            // Calcola la larghezza del testo
+            FontMetrics fm = g2d.getFontMetrics();
+            int textWidth = fm.stringWidth(iterationText);
+
+            // Posiziona il testo in alto a destra
+            int x = getWidth() - textWidth - 50; // 10px di margine dal bordo destro
+            int y = fm.getHeight(); // Posiziona il testo sotto il margine superiore
+
+            g2d.drawString(iterationText, x, y);
         }
+
     }
 }
