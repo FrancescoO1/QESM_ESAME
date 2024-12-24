@@ -178,6 +178,15 @@ public class MatchingGame {
         return migliorNodo;
     }
 
+    public int getMaxIterations() {
+        // Il numero massimo di iterazioni è determinato dal numero totale di flussi
+        // da processare tra tutte le sorgenti
+        return nodiSorgenti.stream()
+                .mapToInt(sorgente -> sorgente.getFlussi().size())
+                .max()
+                .orElse(0);
+    }
+
     // Getters
     public List<Flusso> getFlussi() {
         return new ArrayList<>(flussiPerSorgente.values());

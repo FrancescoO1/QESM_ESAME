@@ -13,6 +13,7 @@ public class IPNInterface extends JFrame {
     private final List<NodoSorgente> nodiSorgente;
     private final List<NodoIPN> nodiIPN;
     private final Map<NodoSorgente, Point> sorgentiPositions;
+    private Map<Flusso, Boolean> flussiVisibili;
     private final Map<NodoIPN, Point> ipnPositions;
     private int currentStep = 0;
     private final JButton nextStepButton;
@@ -26,10 +27,17 @@ public class IPNInterface extends JFrame {
         this.sorgentiPositions = new HashMap<>();
         this.ipnPositions = new HashMap<>();
         this.initialCapacities = new HashMap<>();
+        this.flussiVisibili = new HashMap<>();
 
         // Store initial capacities
         for (NodoIPN ipn : nodiIPN) {
             initialCapacities.put(ipn, ipn.getL_z());
+        }
+
+        for (NodoSorgente sorgente : nodiSorgente) {
+            for (Flusso flusso : sorgente.getFlussi()) {
+                flussiVisibili.put(flusso, false);
+            }
         }
 
         setTitle("IPN Network Visualization");
@@ -55,7 +63,7 @@ public class IPNInterface extends JFrame {
         // Setup button action
         nextStepButton.addActionListener(e -> {
             currentStep++;
-            networkPanel.repaint();
+            UpdateInterfaceStatus();
         });
 
         // Set frame properties
@@ -83,6 +91,39 @@ public class IPNInterface extends JFrame {
         }
     }
 
+    public void UpdateInterfaceStatus() {
+        // Aggiorna la visibilità dei flussi basandosi sulle assegnazioni
+        for (NodoSorgente sorgente : nodiSorgente) {
+            List<Flusso> flussi = sorgente.getFlussi();
+            for (int i = 0; i <= currentStep && i < flussi.size(); i++) {
+                Flusso flusso = flussi.get(i);
+                NodoIPN assegnato = matchingGame.getAssegnazioneParziale(flusso);
+                flussiVisibili.put(flusso, assegnato != null);
+            }
+        }
+
+        if (currentStep >= getTotalFlows()) {
+            nextStepButton.setEnabled(false);
+            JOptionPane.showMessageDialog(this,
+                    "Simulation completed!",
+                    "End of Simulation",
+                    JOptionPane.INFORMATION_MESSAGE);
+        } else {
+            nextStepButton.setText("Next Step (" + (currentStep + 1) + "/" + getTotalFlows() + ")");
+        }
+
+        networkPanel.repaint();
+    }
+
+    private int getTotalFlows() {
+        int total = 0;
+        for (NodoSorgente sorgente : nodiSorgente) {
+            total += sorgente.getFlussi().size();
+        }
+        return total;
+    }
+
+
     private class NetworkPanel extends JPanel {
         private static final int NODE_RADIUS = 30;
 
@@ -97,16 +138,15 @@ public class IPNInterface extends JFrame {
             g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
                     RenderingHints.VALUE_ANTIALIAS_ON);
 
-            // Draw information panel first
+            // Disegna i componenti esistenti
             drawInfoPanel(g2d);
-
-            // Draw nodes and connections
             drawNodes(g2d);
             drawConnections(g2d);
             drawFlowTables(g2d);
-
-            // Draw iteration counter
             drawIterationCounter(g2d);
+
+            // Aggiungi la legenda dei flussi
+            drawFlowLegend(g2d);
         }
 
         private void drawInfoPanel(Graphics2D g2d) {
@@ -183,20 +223,93 @@ public class IPNInterface extends JFrame {
 
         private void drawConnections(Graphics2D g2d) {
             g2d.setStroke(new BasicStroke(2));
-            g2d.setColor(Color.BLACK);
 
+            // Per ogni nodo sorgente
             for (NodoSorgente sorgente : nodiSorgente) {
                 Point sourcePoint = sorgentiPositions.get(sorgente);
                 List<Flusso> flussi = sorgente.getFlussi();
 
-                if (currentStep < flussi.size()) {
-                    Flusso currentFlusso = flussi.get(currentStep);
-                    NodoIPN assignedIPN = matchingGame.getAssegnazioneParziale(currentFlusso);
+                // Calcola gli offset per i punti di partenza dei flussi
+                int numFlussi = flussi.size();
+                int totalHeight = (numFlussi - 1) * 10;
+                int startY = sourcePoint.y - totalHeight / 2;
 
-                    if (assignedIPN != null) {
-                        Point targetPoint = ipnPositions.get(assignedIPN);
-                        g2d.drawLine(sourcePoint.x + NODE_RADIUS, sourcePoint.y,
-                                targetPoint.x - NODE_RADIUS, targetPoint.y);
+                // Per ogni flusso del nodo sorgente
+                for (int i = 0; i < flussi.size(); i++) {
+                    Flusso flusso = flussi.get(i);
+
+                    // Controlla se il flusso è visibile
+                    if (flussiVisibili.get(flusso)) {
+                        Point adjustedSourcePoint = new Point(
+                                sourcePoint.x + NODE_RADIUS,
+                                startY + i * 10
+                        );
+
+                        NodoIPN assignedIPN = matchingGame.getAssegnazioneParziale(flusso);
+                        if (assignedIPN != null) {
+                            Point targetPoint = ipnPositions.get(assignedIPN);
+
+                            Color flowColor = getColorForFlow(flusso.getId());
+                            g2d.setColor(flowColor);
+
+                            // Disegna la linea
+                            g2d.drawLine(
+                                    adjustedSourcePoint.x,
+                                    adjustedSourcePoint.y,
+                                    targetPoint.x - NODE_RADIUS,
+                                    targetPoint.y
+                            );
+
+                            // Disegna l'etichetta del flusso
+                            String flowLabel = "F" + flusso.getId();
+                            int midX = (adjustedSourcePoint.x + targetPoint.x - NODE_RADIUS) / 2;
+                            int midY = (adjustedSourcePoint.y + targetPoint.y) / 2;
+
+                            FontMetrics fm = g2d.getFontMetrics();
+                            int labelWidth = fm.stringWidth(flowLabel);
+                            int labelHeight = fm.getHeight();
+
+                            g2d.setColor(Color.WHITE);
+                            g2d.fillRect(midX - labelWidth/2 - 2, midY - labelHeight/2,
+                                    labelWidth + 4, labelHeight);
+
+                            g2d.setColor(flowColor);
+                            g2d.drawString(flowLabel, midX - labelWidth/2, midY + labelHeight/3);
+                        }
+                    }
+                }
+            }
+        }
+
+        private Color getColorForFlow(int flowId) {
+            // Usa l'ID del flusso per generare un colore unico
+            float hue = (flowId * 0.618033988749895f) % 1.0f; // Golden ratio per una distribuzione uniforme
+            return Color.getHSBColor(hue, 0.8f, 0.9f);
+        }
+
+        private void drawFlowLegend(Graphics2D g2d) {
+            int legendX = 50;
+            int legendY = getHeight() - 100;
+            int lineLength = 30;
+            int spacing = 20;
+
+            g2d.setFont(new Font("Arial", Font.BOLD, 12));
+            g2d.setColor(Color.BLACK);
+            g2d.drawString("Flussi attivi:", legendX, legendY - spacing);
+
+            for (NodoSorgente sorgente : nodiSorgente) {
+                for (Flusso flusso : sorgente.getFlussi()) {
+                    if (matchingGame.getAssegnazioneParziale(flusso) != null) {
+                        Color flowColor = getColorForFlow(flusso.getId());
+                        g2d.setColor(flowColor);
+
+                        // Disegna una linea campione
+                        g2d.drawLine(legendX, legendY, legendX + lineLength, legendY);
+
+                        // Aggiungi il testo della legenda
+                        g2d.drawString("F" + flusso.getId(), legendX + lineLength + 5, legendY + 5);
+
+                        legendY += spacing;
                     }
                 }
             }
