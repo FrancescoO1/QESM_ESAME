@@ -16,9 +16,10 @@ public class IPNInterface extends JFrame {
     private Map<Flusso, Boolean> flussiVisibili;
     private final Map<NodoIPN, Point> ipnPositions;
     private int currentStep = 0;
-    private final JButton nextStepButton;
     private final NetworkPanel networkPanel;
     private final Map<NodoIPN, Double> initialCapacities;
+
+    private static int currentIteration = 0;
 
     public IPNInterface(MatchingGame matchingGame) {
         this.matchingGame = matchingGame;
@@ -46,30 +47,21 @@ public class IPNInterface extends JFrame {
 
         // Create main components
         networkPanel = new NetworkPanel();
-        nextStepButton = new JButton("Next Step");
-
-        // Setup button panel
-        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        buttonPanel.add(new JLabel("Iteration: "));
-        buttonPanel.add(nextStepButton);
 
         // Add components to frame
         add(networkPanel, BorderLayout.CENTER);
-        add(buttonPanel, BorderLayout.SOUTH);
 
         // Initialize node positions
         initializePositions();
-
-        // Setup button action
-        nextStepButton.addActionListener(e -> {
-            currentStep++;
-            UpdateInterfaceStatus();
-        });
 
         // Set frame properties
         setSize(1200, 800);
         setLocationRelativeTo(null);
         setVisible(true);
+    }
+
+    public static void setCurrentIteration(int currentIteration) {
+        IPNInterface.currentIteration = currentIteration;
     }
 
     private void initializePositions() {
@@ -95,7 +87,7 @@ public class IPNInterface extends JFrame {
         // Aggiorna la visibilità dei flussi basandosi sulle assegnazioni
         for (NodoSorgente sorgente : nodiSorgente) {
             List<Flusso> flussi = sorgente.getFlussi();
-            for (int i = 0; i <= currentStep && i < flussi.size(); i++) {
+            for (int i = 0;  i < flussi.size(); i++) {
                 Flusso flusso = flussi.get(i);
                 NodoIPN assegnato = matchingGame.getAssegnazioneParziale(flusso);
                 flussiVisibili.put(flusso, assegnato != null);
@@ -103,13 +95,10 @@ public class IPNInterface extends JFrame {
         }
 
         if (currentStep >= getTotalFlows()) {
-            nextStepButton.setEnabled(false);
             JOptionPane.showMessageDialog(this,
                     "Simulation completed!",
                     "End of Simulation",
                     JOptionPane.INFORMATION_MESSAGE);
-        } else {
-            nextStepButton.setText("Next Step (" + (currentStep + 1) + "/" + getTotalFlows() + ")");
         }
 
         networkPanel.repaint();
@@ -150,10 +139,10 @@ public class IPNInterface extends JFrame {
         }
 
         private void drawInfoPanel(Graphics2D g2d) {
-            int panelX = getWidth() - 300;
-            int panelY = 20;
+            int panelX = 20; // Posizionamento a sinistra
+            int panelY = getHeight() - 200; // Posizionamento in basso
             int panelWidth = 280;
-            int panelHeight = 120;
+            int panelHeight = 150;
 
             // Draw panel background
             g2d.setColor(new Color(240, 240, 240));
@@ -183,6 +172,7 @@ public class IPNInterface extends JFrame {
                 textY += 15;
             }
         }
+
 
         private void drawNodes(Graphics2D g2d) {
             // Draw source nodes
@@ -295,24 +285,6 @@ public class IPNInterface extends JFrame {
 
             g2d.setFont(new Font("Arial", Font.BOLD, 12));
             g2d.setColor(Color.BLACK);
-            g2d.drawString("Flussi attivi:", legendX, legendY - spacing);
-
-            for (NodoSorgente sorgente : nodiSorgente) {
-                for (Flusso flusso : sorgente.getFlussi()) {
-                    if (matchingGame.getAssegnazioneParziale(flusso) != null) {
-                        Color flowColor = getColorForFlow(flusso.getId());
-                        g2d.setColor(flowColor);
-
-                        // Disegna una linea campione
-                        g2d.drawLine(legendX, legendY, legendX + lineLength, legendY);
-
-                        // Aggiungi il testo della legenda
-                        g2d.drawString("F" + flusso.getId(), legendX + lineLength + 5, legendY + 5);
-
-                        legendY += spacing;
-                    }
-                }
-            }
         }
 
         private void drawFlowTables(Graphics2D g2d) {
@@ -355,7 +327,7 @@ public class IPNInterface extends JFrame {
         private void drawIterationCounter(Graphics2D g2d) {
             g2d.setColor(Color.BLACK);
             g2d.setFont(new Font("Arial", Font.BOLD, 14));
-            String iterationText = "Iteration: " + currentStep;
+            String iterationText = "Iteration: " + currentIteration;
             g2d.drawString(iterationText, getWidth() - 150, getHeight() - 20);
         }
     }

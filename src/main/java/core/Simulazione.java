@@ -39,6 +39,8 @@ public class Simulazione {
                     System.out.println("Inizio iterazione " + iterazione);
                     final int currentIteration = iterazione;
 
+                    ipnInterface.setCurrentIteration(currentIteration);
+
                     // Aggiorna l'interfaccia nel thread EDT
                     SwingUtilities.invokeLater(() -> {
                         ipnInterface.UpdateInterfaceStatus();
