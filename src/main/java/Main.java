@@ -6,12 +6,14 @@ import java.util.*;
 
 public class Main {
 
-    private static final int NUMERO_NODI_IPN = 2;
+    private static final int NUMERO_NODI_IPN = 4;
     private static final int NUMERO_ITERAZIONI = 10;
-    private static final int NUMERO_FLUSSI_PER_NODO_SORGENTE = 4;
-    private static final int NUMERO_NODI_SORGENTE = 5;
+    private static final int NUMERO_FLUSSI_PER_NODO_SORGENTE = 3;
+    private static final int NUMERO_NODI_SORGENTE = 7;
     private static final int CAPACITA_DISPONIBILE = 50;
     private static final int CAPACITA_FLUSSO = 2;
+    private static final int SCADENZA_FLUSSO = 5;
+    private static final int NUMERO_GRAFICI = 3;
     private static final Random random = new Random();
 
     public static void main(String[] args) {
@@ -19,7 +21,7 @@ public class Main {
         // Creazione di nodi IPN con capacità disponibili
         List<NodoIPN> nodiIPN = new ArrayList<>();
         for (int i = 0; i < NUMERO_NODI_IPN; i++) {
-            NodoIPN nodoIPN = new NodoIPN(i + 1, random.nextGaussian() * 10 + CAPACITA_DISPONIBILE);
+            NodoIPN nodoIPN = new NodoIPN(i + 1, random.nextGaussian() * 0 + CAPACITA_DISPONIBILE);
             nodiIPN.add(nodoIPN);
         }
 
@@ -33,12 +35,12 @@ public class Main {
         // Aggiungi flussi ai nodi sorgenti
         for (NodoSorgente nodoSorgente : nodiSorgenti) {
             for (int i = 0; i < NUMERO_FLUSSI_PER_NODO_SORGENTE; i++) {
-                Flusso flusso = new Flusso(i + 1, 5.0, 0.5 + (i * 0.05), random.nextGaussian() * 0.5 + CAPACITA_FLUSSO );
+                Flusso flusso = new Flusso(i + 1, random.nextGaussian() * 0.5 + SCADENZA_FLUSSO, 0.5, random.nextGaussian() * 0.5 + CAPACITA_FLUSSO, nodoSorgente);
                 nodoSorgente.aggiungiFlusso(flusso);
             }
         }
 
-        Simulazione simulazione = new Simulazione(nodiIPN, nodiSorgenti, NUMERO_ITERAZIONI);
+        Simulazione simulazione = new Simulazione(nodiIPN, nodiSorgenti, NUMERO_ITERAZIONI, NUMERO_GRAFICI);
         simulazione.eseguiSimulazione();
 
     }

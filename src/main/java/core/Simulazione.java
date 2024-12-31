@@ -1,6 +1,7 @@
 package core;
 
 import javax.swing.*;
+import java.util.ArrayList;
 import java.util.List;
 
 public class Simulazione {
@@ -9,16 +10,29 @@ public class Simulazione {
     private final List<NodoSorgente> nodiSorgente;
     private IPNInterface ipnInterface;
     private final MatchingGame matchingGame;
+    private ChartManager chartManager; // Modificato: ora usiamo un solo ChartManager
+    private final int numeroGrafici;
 
-    public Simulazione(List<NodoIPN> nodoIPN, List<NodoSorgente> nodoSorgente, int numeroIterazioni) {
+    public Simulazione(List<NodoIPN> nodoIPN, List<NodoSorgente> nodoSorgente, int numeroIterazioni, int numeroGrafici) {
         this.numeroIterazioni = numeroIterazioni;
         this.nodiIPN = nodoIPN;
         this.nodiSorgente = nodoSorgente;
         this.matchingGame = new MatchingGame(this.nodiSorgente, this.nodiIPN);
+        this.numeroGrafici = numeroGrafici;
+
+        // Crea un singolo ChartManager con il numero specificato di grafici
+        SwingUtilities.invokeLater(() -> {
+            this.chartManager = new ChartManager("Analisi Multi-Grafico", 1); // Inizia con un grafico
+            this.chartManager.setVisible(true);
+
+            // Aggiungi gli altri grafici richiesti
+            for (int i = 1; i < numeroGrafici; i++) {
+                this.chartManager.addNewChart("Grafico " + (i + 1));
+            }
+        });
     }
 
     public void inizializzaInterfaccia() {
-        // Esegui l'inizializzazione dell'interfaccia nel thread di EDT
         SwingUtilities.invokeLater(() -> {
             this.ipnInterface = new IPNInterface(matchingGame);
             ipnInterface.setVisible(true);
@@ -26,22 +40,16 @@ public class Simulazione {
     }
 
     public void eseguiSimulazione() {
-        // Inizializza l'interfaccia prima di iniziare la simulazione
         inizializzaInterfaccia();
 
-        // Crea un thread separato per la simulazione
         Thread simulationThread = new Thread(() -> {
             try {
-                // Attendi un momento per assicurarsi che l'interfaccia sia inizializzata
-               // Thread.sleep(1000);
-
                 for (int iterazione = 1; iterazione <= numeroIterazioni; iterazione++) {
                     System.out.println("Inizio iterazione " + iterazione);
                     final int currentIteration = iterazione;
 
                     ipnInterface.setCurrentIteration(currentIteration);
 
-                    // Aggiorna l'interfaccia nel thread EDT
                     SwingUtilities.invokeLater(() -> {
                         ipnInterface.UpdateInterfaceStatus();
                     });
@@ -52,29 +60,52 @@ public class Simulazione {
 
                     System.out.println();
 
+                    SwingUtilities.invokeLater(() -> {
+                        ipnInterface.updatePreferenceLists();
+                    });
+
+
                     for (NodoSorgente sorgente : nodiSorgente) {
                         for (Flusso flusso : sorgente.getFlussi()) {
                             NodoIPN nodoAssegnato = matchingGame.algoritmoMatching(flusso);
 
                             if (nodoAssegnato != null) {
-                                System.out.println("Flusso " + flusso.getId() +  " del nodo sorgente " + sorgente.getId() + " assegnato a Nodo IPN " + nodoAssegnato.getId());
+                                System.out.println("Flusso " + flusso.getId() + " del nodo sorgente " + sorgente.getId() + " assegnato a Nodo IPN " + nodoAssegnato.getId());
                                 System.out.println("Ritardo del flusso: " + flusso.getT_i());
                             } else {
                                 System.out.println("Flusso " + flusso.getId() + " non assegnato a nessun Nodo IPN");
                             }
 
-                            // Pausa breve per permettere di visualizzare l'animazione
                             Thread.sleep(500);
 
-                            // Aggiorna l'interfaccia dopo ogni assegnazione
                             SwingUtilities.invokeLater(() -> {
                                 ipnInterface.UpdateInterfaceStatus();
                             });
                         }
                     }
 
-                    //stampa l'utilità del sistema
-                    System.out.println("Utilità del sistema: " + matchingGame.calcolaUtilita());
+                    ipnInterface.updatePreferenceLists();
+
+                    // Calcola l'utilità del sistema
+                    String utilita = matchingGame.calcolaUtilita();
+                    System.out.println("Utilità del sistema: " + utilita);
+
+                    // Aggiorna tutti i grafici nel ChartManager
+                    final int iterazioneFinal = iterazione;
+                    SwingUtilities.invokeLater(() -> {
+                        // Aggiorna il primo grafico con i dati standard
+                        chartManager.updateChart(0, matchingGame, nodiSorgente);
+
+                        // Esempio di come aggiornare gli altri grafici con dati diversi
+                        // qua infatti aggiungo gli altri grafici che mi interessa
+
+                        // Puoi personalizzare questa parte in base alle tue esigenze
+                        for (int i = 1; i < numeroGrafici; i++) {
+                            // Qui puoi aggiungere logica diversa per ogni grafico
+                            // Per esempio, potresti voler mostrare metriche diverse per ogni grafico
+                            chartManager.updateChart(i, matchingGame, nodiSorgente);
+                        }
+                    });
 
                     matchingGame.aggiornaPreferenceListFlusso_V_i_z();
                     printSystemState();
@@ -89,7 +120,6 @@ public class Simulazione {
             }
         });
 
-        // Avvia il thread della simulazione
         simulationThread.start();
     }
 
@@ -98,8 +128,33 @@ public class Simulazione {
         for (NodoIPN nodoIPN : nodiIPN) {
             System.out.println("Nodo IPN " + nodoIPN.getId() +
                     ": Capacità residua = " + nodoIPN.getL_z() +
-                    " Tempo di attesa in coda al nodo = " + nodoIPN.getQ_z_i());
+                    " Tempo di attesa in coda al nodo = " + flusso.getq_z_i());
         }
         System.out.println();
+    }
+
+    // Metodi di utilità per gestire i grafici
+    public void resetAllGraphs() {
+        if (chartManager != null) {
+            chartManager.resetAllCharts();
+        }
+    }
+
+    public void resetGraph(int index) {
+        if (chartManager != null) {
+            chartManager.resetChart(index);
+        }
+    }
+
+    public void addNewGraph(String title) {
+        if (chartManager != null) {
+            chartManager.addNewChart(title);
+        }
+    }
+
+    public void removeGraph(int index) {
+        if (chartManager != null) {
+            chartManager.removeChart(index);
+        }
     }
 }

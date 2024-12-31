@@ -4,6 +4,7 @@ import java.util.*;
 
 public class MatchingGame {
     private final Map<NodoSorgente, Flusso> flussiPerSorgente;
+    private final Set<Flusso> allFlussi; //serve per tenere traccia di tutti i flussi
     private final List<NodoIPN> nodiIPN;
     private final List<NodoSorgente> nodiSorgenti;
     private final Map<NodoIPN, List<Flusso>> preferenceListNodo; //preference list di flussi del nodo IPN, non cambia ad ogni iterazione rimane statica
@@ -15,6 +16,7 @@ public class MatchingGame {
     public MatchingGame(List<NodoSorgente> nodiSorgenti, List<NodoIPN> nodiIPN) {
         this.nodiSorgenti = new ArrayList<>(nodiSorgenti);
         this.nodiIPN = new ArrayList<>(nodiIPN);
+        this.allFlussi = new HashSet<>();
         this.flussiPerSorgente = initializeFlussiPerSorgente(nodiSorgenti);
         this.preferenceListNodo = new HashMap<>();
         this.preferenceListFlusso = new HashMap<>();
@@ -22,32 +24,27 @@ public class MatchingGame {
         initializePreferenceLists();
     }
 
-    private double calcolaLatenzaRete() {
+    public double calcolaLatenzaRete() {
         return random.nextDouble() * 0.5;
     }
-
-    //questo metodo inizializza i flussi per le sorgenti, ovvero per ogni sorgente prende il primo flusso e lo mette in una mappa, funziona in questo modo:
-    //1. per ogni sorgente prende il primo flusso e lo mette in una mappa
-    //2. ritorna la mappa
 
     private Map<NodoSorgente, Flusso> initializeFlussiPerSorgente(List<NodoSorgente> sorgenti) {
         Map<NodoSorgente, Flusso> result = new HashMap<>();
         for (NodoSorgente sorgente : sorgenti) {
             if (!sorgente.getFlussi().isEmpty()) {
-                result.put(sorgente, sorgente.getFlussi().getFirst()); // Prende il primo flusso e lo mette nella mappa assegnato alla sorgente
+                result.put(sorgente, sorgente.getFlussi().getFirst());
+                allFlussi.addAll(sorgente.getFlussi()); // Add all flows to tracking set
             }
         }
         return result;
     }
 
-    //questo metodo inizializza le liste di preferenza, ovvero per ogni nodo IPN e per ogni flusso crea una lista vuota e la mette in una mappa, funziona in questo modo:
-    //1. per ogni nodo IPN crea una lista vuota di flussi e la mette in una mappa
-    //2. per ogni flusso crea una lista vuota di nodi IPN e la mette in una mappa
-    //3. ritorna le mappe
-
     private void initializePreferenceLists() {
         nodiIPN.forEach(ipn -> preferenceListNodo.put(ipn, new ArrayList<>()));
-        flussiPerSorgente.values().forEach(flusso -> preferenceListFlusso.put(flusso, new ArrayList<>()));
+        allFlussi.forEach(flusso -> {
+            preferenceListFlusso.put(flusso, new ArrayList<>());
+            System.out.println("Inizializzata preference list vuota per Flusso: " + flusso.getId());
+        });
     }
 
     //la preference list di ogni flussi ordina gli ipn in ordine crescente basandosi sulla metrica V_i_z = C_i_d_z, questa cosa va implementata in un altro metodo
@@ -57,15 +54,15 @@ public class MatchingGame {
     //per cui il codice di questo metodo sarebbe questo, devo usare la metrica V_i_z:
 
     public void aggiornaPreferenceListFlusso_V_i_z() {
-        for (Flusso flusso : flussiPerSorgente.values()) {
+        preferenceListFlusso.clear();
+        for (Flusso flusso : allFlussi) {
             List<NodoIPN> preferenceList = new ArrayList<>(nodiIPN);
-            preferenceList.sort((nodo1, nodo2) -> {                             //con sort ordino in modo crescente
-                double latenzaRete = calcolaLatenzaRete();
-                double C_i_d_z1 = nodo1.calcolaC_i_z_d(flusso, latenzaRete);    //V_i_z in questo codice è C_i_d_z1 e C_i_d_z2
-                double C_i_d_z2 = nodo2.calcolaC_i_z_d(flusso, latenzaRete);
+            preferenceList.sort((nodo1, nodo2) -> {
+                double C_i_d_z1 = nodo1.calcolaC_i_z_d(flusso, calcolaLatenzaRete());
+                double C_i_d_z2 = nodo2.calcolaC_i_z_d(flusso, calcolaLatenzaRete());
                 return Double.compare(C_i_d_z1, C_i_d_z2);
             });
-            preferenceListFlusso.put(flusso, preferenceList);                   //aggiungo la lista ordinata alla preference list del flusso
+            preferenceListFlusso.put(flusso, preferenceList);
         }
     }
 
@@ -82,73 +79,70 @@ public class MatchingGame {
 
     public void preferenceListNodo_E_z_i() {
         for (NodoIPN nodo : nodiIPN) {
-            List<Flusso> preferenceList = new ArrayList<>(flussiPerSorgente.values());
+            // Crea una lista di flussi basandosi sui flussi associati alle sorgenti
+            List<Flusso> preferenceList = new ArrayList<>(allFlussi);
+
+            // Ordina la lista di flussi in ordine decrescente rispetto a 1 / B_i
             preferenceList.sort((flusso1, flusso2) -> {
-                double E_z_i1 = 1 / flusso1.getB_i();
-                double E_z_i2 = 1 / flusso2.getB_i();
-                return Double.compare(E_z_i2, E_z_i1);
+                double E_z_i1 = 1.0 / flusso1.getB_i(); // Calcola E_z_i per flusso1
+                double E_z_i2 = 1.0 / flusso2.getB_i(); // Calcola E_z_i per flusso2
+                return Double.compare(E_z_i2, E_z_i1); // Ordina in decrescente
             });
+
+            // Aggiorna la mappa delle liste di preferenza per il nodo corrente
             preferenceListNodo.put(nodo, preferenceList);
         }
     }
 
 
     public double calcolaPi() {
-        double D_i_totale = flussiPerSorgente.values().stream()
+        // Calcolo di pi come rapporto tra somma totale D_i e numero di flussi
+        double sommaDiTotale = allFlussi.stream() //avevo flussipersorgente.values().stream()
                 .mapToDouble(Flusso::calcolaD_i)
                 .sum();
-        return D_i_totale / flussiPerSorgente.size();
+        return sommaDiTotale / allFlussi.size();
     }
 
     public String calcolaUtilita() {
+        // Calcolo di pi
         double pi = calcolaPi();
-        double A = flussiPerSorgente.size() * nodiIPN.size();
+
+        // Calcolo di A: somma degli elementi della matrice di allocazione
+        double A = nodiIPN.stream()
+                .flatMap(nodo -> preferenceListNodo.get(nodo).stream()) // Ottieni flussi associati al nodo
+                .count(); // Conta il totale delle associazioni attive
+
+        if (A == 0) {
+            return "100.00%"; // Caso limite: nessuna allocazione attiva
+        }
+
         double somma = 0.0;
 
-        for (Flusso flusso : flussiPerSorgente.values()) {
+        System.out.println("\n=====> A: " + A);
+
+        // Calcolo della somma pesata dei tempi di completamento
+        for (Flusso flusso : allFlussi) {
             for (NodoIPN nodo : nodiIPN) {
-                double latenzaRete = calcolaLatenzaRete();
+                double latenzaRete = calcolaLatenzaRete(); // Se dipende da nodo/fluss, spostare dentro il ciclo
                 double C_i_d_z = nodo.calcolaC_i_z_d(flusso, latenzaRete);
-                double alpha_i_z = preferenceListNodo.get(nodo).contains(flusso) ? 1 : 0;
-                somma += C_i_d_z * alpha_i_z;
+                double alpha_i_z = preferenceListNodo.get(nodo).contains(flusso) ? 1 : 0; // Valore di alpha
+                somma += C_i_d_z * alpha_i_z; // Accumula il prodotto pesato
             }
         }
 
-        double utilita =  1 / (pi * somma / A);
+        // Calcolo dell'utilità
+        double utilita = 1 / (pi * somma / A);
 
-        if (Double.isInfinite(utilita)) {
-            return "100.00%";
+        // Gestione di casi limite
+        if (Double.isInfinite(utilita) || Double.isNaN(utilita)) {
+            return "100.00%"; // Ritorna massimo
         }
 
+        // Formattazione del risultato in percentuale
         return String.format("%.2f%%", utilita * 100);
     }
 
-
-
-    //con il metodo algoritmoMatching devo implementare l'algoritmo di matching che userà i metodi aggiornaPreferenceListFlusso_V_i_z, aggiornaAssegnazioneParziale e preferenceListNodo_E_z_i.
-    //in poche parole lo pseudocodice è questo:
-    //for each flusso in flussi do:
-    // costruisci la preference list del flusso usando aggiornaPreferenceListFlusso_V_i_z;
-    //for each nodoIPN in nodiIPN do:
-    // csotruisci la preference list del nodo usando preferenceListNodo_E_z_i;
-    //for each flusso in flussi do:
-    // invia una proposta al suo IPN preferito contenuto nella preference list del flusso;
-    //for each nodoIPN in nodiIPN ricevente almeno una proposta do:
-    // accetta la proposta del flusso preferito dal nodoIPN, tra quelle ricevute;
-    // rifiuta le altre propste ricevute.
-    //il codice che implementa questo pseudocodice è il seguente:
-    //quello che fa questa parte di codice è di eseguire il matching per un flusso, ovvero di assegnare un flusso ad un nodo IPN e funziona in questo modo:
-    //1. scorre tutti i nodi IPN e controlla se il nodo ha la capacità sufficiente per gestire il flusso
-    //2. calcola la latenza di rete
-    //3. calcola il tempo di completamento del flusso per il nodo IPN
-    //4. se il tempo di completamento è minore del tempo di completamento migliore, allora aggiorna il tempo di completamento migliore e il nodo migliore, perchè lo faccio? perchè voglio assegnare il flusso al nodo che lo completa prima
-    //5. calcola il tempo di completamento del flusso per il nodo IPN
-    //6. calcola il ritardo del flusso
-    //7. decrementa la capacità del nodo IPN
-    //8. aggiorna l'assegnazione parziale che serve per tenere traccia dei flussi assegnati
-    //9. aggiorna la preference list del nodo
-    //10. ritorna il nodo migliore
-    public NodoIPN algoritmoMatching(Flusso flusso) {  //forse meglio passare lista di flussi
+    public NodoIPN algoritmoMatching(Flusso flusso) {
         aggiornaPreferenceListFlusso_V_i_z();
         preferenceListNodo_E_z_i();
         NodoIPN migliorNodo = null;
@@ -184,14 +178,6 @@ public class MatchingGame {
         return migliorNodo;
     }
 
-    public int getMaxIterations() {
-        // Il numero massimo di iterazioni è determinato dal numero totale di flussi
-        // da processare tra tutte le sorgenti
-        return nodiSorgenti.stream()
-                .mapToInt(sorgente -> sorgente.getFlussi().size())
-                .max()
-                .orElse(0);
-    }
 
     // Getters
     public List<Flusso> getFlussi() {
@@ -203,11 +189,9 @@ public class MatchingGame {
     public List<NodoSorgente> getNodiSorgenti() {
         return new ArrayList<>(nodiSorgenti);
     }
-    public Map<Flusso, List<NodoIPN>> getPreferenceListFlusso() {
-        return new HashMap<>(preferenceListFlusso);
-    }
-    public Map<NodoIPN, List<Flusso>> getPreferenceListNodo() {
-        return new HashMap<>(preferenceListNodo);
+
+    public Set<Flusso> getAllFlussi() {
+        return allFlussi;
     }
 
     public NodoIPN getAssegnazioneParziale(Flusso flusso) {
@@ -217,4 +201,17 @@ public class MatchingGame {
     public void aggiornaAssegnazioneParziale(Flusso flusso, NodoIPN nodoIPN) {
         assegnazioniParziali.put(flusso, nodoIPN);
     }
+
+
+    // ritorna la preference list del flusso ricevuto in input
+    public List<NodoIPN> getPreferenceListFlusso(Flusso flusso) {
+        return preferenceListFlusso.get(flusso);
+    }
+
+
+    // ritorna la preference list del nodo ricevuto in input
+    public List<Flusso> getPreferenceListNodo(NodoIPN nodo) {
+        return preferenceListNodo.get(nodo);
+    }
+
 }

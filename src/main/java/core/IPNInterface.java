@@ -2,14 +2,13 @@ package core;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.*;
 import java.util.*;
 import java.util.List;
 
 
-//TODO FAI I GRAFICI del paper in un'altra classe
+//TODO FAI I GRAFICI del paper in un'altra classe blaaa
 //TODO cambiare i nomi nell'interfaccia grafica e farli tutti in italiano
-
+//TODO provato a fare qualche grafico
 
 
 public class IPNInterface extends JFrame {
@@ -23,6 +22,8 @@ public class IPNInterface extends JFrame {
     private final NetworkPanel networkPanel;
     private final JPanel legendPanel;
     private final Map<NodoIPN, Double> initialCapacities;
+
+    private final JPanel preferenceListPanel;
 
     private static int currentIteration = 0;
 
@@ -77,6 +78,23 @@ public class IPNInterface extends JFrame {
         setExtendedState(JFrame.MAXIMIZED_BOTH);
         setLocationRelativeTo(null);
         setVisible(true);
+
+        // Create preference list panel
+        preferenceListPanel = new JPanel();
+        preferenceListPanel.setLayout(new BoxLayout(preferenceListPanel, BoxLayout.Y_AXIS));
+        preferenceListPanel.setBackground(new Color(240, 240, 240));
+        preferenceListPanel.setBorder(BorderFactory.createTitledBorder("Preference Lists"));
+
+        // Create a scroll pane for preference lists
+        JScrollPane prefScrollPane = new JScrollPane(preferenceListPanel);
+        prefScrollPane.setPreferredSize(new Dimension(300, 200));
+
+        // Create bottom right panel
+        JPanel bottomRightPanel = new JPanel(new BorderLayout());
+        bottomRightPanel.add(prefScrollPane, BorderLayout.CENTER);
+
+        // Add to frame
+        add(bottomRightPanel, BorderLayout.SOUTH);
 
         updateLegendPanel(matchingGame);
     }
@@ -155,13 +173,101 @@ public class IPNInterface extends JFrame {
         legendPanel.repaint(); // Forza il ridisegno
     }
 
+    public void updatePreferenceLists() {
+        preferenceListPanel.removeAll(); // Rimuovi tutti i componenti precedenti
+
+        // Aggiungi titolo
+        JLabel titleLabel = new JLabel("Preference Lists:");
+        titleLabel.setFont(new Font("Arial", Font.BOLD, 12));
+        titleLabel.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10)); // Padding: top, left, bottom, right
+        preferenceListPanel.add(titleLabel);
+
+        preferenceListPanel.add(Box.createVerticalStrut(10)); // Spazio tra le righe
+
+        // Aggiungi le preference list dei flussi
+        JLabel flussoLabel = new JLabel("Flows:");
+        flussoLabel.setFont(new Font("Arial", Font.BOLD, 12));
+        flussoLabel.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
+        preferenceListPanel.add(flussoLabel);
+
+        for (Flusso flusso : matchingGame.getAllFlussi()) {
+            // Crea un pannello per il flusso corrente
+            JPanel flussoEntry = new JPanel();
+            flussoEntry.setLayout(new BoxLayout(flussoEntry, BoxLayout.Y_AXIS));
+
+            // Etichetta del titolo del flusso
+            JLabel flussoLabelFinal = new JLabel("Flusso " + flusso.getId() + ":" + " (Nodo Sorgente " + flusso.getNodoSorgente().getId() + ")");
+            flussoLabelFinal.setFont(new Font("Arial", Font.BOLD, 12));
+            flussoEntry.add(flussoLabelFinal);
+
+            // Ottieni la lista di preferenza
+            List<NodoIPN> preferenceList = matchingGame.getPreferenceListFlusso(flusso);
+            if (preferenceList != null) {
+                // Aggiungi ogni preferenza come etichetta
+                preferenceList.forEach(item -> {
+                    JLabel itemLabel = new JLabel("IPN" + item.getId() + " (C_i_z_d=" + item.calcolaC_i_z_d(flusso, matchingGame.calcolaLatenzaRete()) + ")");
+                    itemLabel.setFont(new Font("Arial", Font.PLAIN, 12));
+                    flussoEntry.add(itemLabel);
+                });
+            } else {
+                // Se la lista è null, mostra un messaggio
+                JLabel noPrefLabel = new JLabel("Nessuna preferenza disponibile");
+                noPrefLabel.setFont(new Font("Arial", Font.ITALIC, 12));
+                flussoEntry.add(noPrefLabel);
+            }
+
+            // Impostazioni estetiche
+            flussoEntry.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
+            preferenceListPanel.add(flussoEntry);
+        }
+
+
+        preferenceListPanel.add(Box.createVerticalStrut(10)); // Spazio tra le righe
+
+        // Aggiungi le preference list dei nodi
+        JLabel nodoLabel = new JLabel("Nodes:");
+        nodoLabel.setFont(new Font("Arial", Font.BOLD, 12));
+        nodoLabel.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
+        preferenceListPanel.add(nodoLabel);
+
+        for (NodoIPN nodo : nodiIPN) {
+            // Crea un pannello per il nodo corrente
+            JPanel nodoEntry = new JPanel();
+            nodoEntry.setLayout(new BoxLayout(nodoEntry, BoxLayout.Y_AXIS));
+            //etichetta del titolo del nodo
+            JLabel nodoLabelFinal = new JLabel("IPN" + nodo.getId());
+            nodoLabelFinal.setFont(new Font("Arial", Font.BOLD, 12));
+            nodoEntry.add(nodoLabelFinal);
+
+            // Ottieni la lista di preferenza
+            List<Flusso> preferenceList = matchingGame.getPreferenceListNodo(nodo);
+            if (preferenceList != null) {
+                // Aggiungi ogni preferenza come etichetta
+                preferenceList.forEach(item -> {
+                    JLabel itemLabel = new JLabel("Flusso " + item.getId() + " nodo sorgente:" + item.getNodoSorgente().getId() +" (B_i=" + item.getB_i() + ", E_z_i=" + (1.0/item.getB_i()) + ")");
+                    itemLabel.setFont(new Font("Arial", Font.PLAIN, 12));
+                    nodoEntry.add(itemLabel);
+                });
+            } else {
+                // Se la lista è null, mostra un messaggio
+                JLabel noPrefLabel = new JLabel("Nessuna preferenza disponibile");
+                noPrefLabel.setFont(new Font("Arial", Font.ITALIC, 12));
+                nodoEntry.add(noPrefLabel);
+            }
+            //impostazioni estetiche
+            nodoEntry.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
+            preferenceListPanel.add(nodoEntry);
+        }
+
+        preferenceListPanel.revalidate(); // Aggiorna il layout del pannello
+    }
 
 
     public void UpdateInterfaceStatus() {
         // Aggiorna la visibilità dei flussi basandosi sulle assegnazioni
         for (NodoSorgente sorgente : nodiSorgente) {
             List<Flusso> flussi = sorgente.getFlussi();
-            for (int i = 0;  i < flussi.size(); i++) {
+            for (int i = 0; i < flussi.size(); i++) {
                 Flusso flusso = flussi.get(i);
                 NodoIPN assegnato = matchingGame.getAssegnazioneParziale(flusso);
                 flussiVisibili.put(flusso, assegnato != null);
@@ -185,8 +291,6 @@ public class IPNInterface extends JFrame {
         }
         return total;
     }
-
-
 
 
     private class NetworkPanel extends JPanel {
@@ -247,7 +351,7 @@ public class IPNInterface extends JFrame {
                 // Draw capacity and waiting time info
                 g2d.setColor(Color.BLACK);
                 String capacityInfo = String.format("Capacity: %.1f", ipn.getL_z());
-                String waitingTimeInfo = String.format("Wait Time: %.1f", ipn.getQ_z_i());
+                String waitingTimeInfo = String.format("Wait Time: %.1f", flusso.getq_z_i());
                 g2d.drawString(capacityInfo, p.x + NODE_RADIUS + 10, p.y - 5);
                 g2d.drawString(waitingTimeInfo, p.x + NODE_RADIUS + 10, p.y + 15);
 
@@ -304,11 +408,11 @@ public class IPNInterface extends JFrame {
                             int labelHeight = fm.getHeight();
 
                             g2d.setColor(Color.WHITE);
-                            g2d.fillRect(midX - labelWidth/2 - 2, midY - labelHeight/2,
+                            g2d.fillRect(midX - labelWidth / 2 - 2, midY - labelHeight / 2,
                                     labelWidth + 4, labelHeight);
 
                             g2d.setColor(flowColor);
-                            g2d.drawString(flowLabel, midX - labelWidth/2, midY + labelHeight/3);
+                            g2d.drawString(flowLabel, midX - labelWidth / 2, midY + labelHeight / 3);
                         }
                     }
                 }
@@ -376,3 +480,5 @@ public class IPNInterface extends JFrame {
 
     }
 }
+
+
