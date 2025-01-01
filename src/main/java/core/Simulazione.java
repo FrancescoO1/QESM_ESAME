@@ -87,7 +87,7 @@ public class Simulazione {
                     ipnInterface.updatePreferenceLists();
 
                     // Calcola l'utilità del sistema
-                    String utilita = matchingGame.calcolaUtilita();
+                    Double utilita = matchingGame.calcolaUtilita();
                     System.out.println("Utilità del sistema: " + utilita);
 
                     // Aggiorna tutti i grafici nel ChartManager
@@ -126,9 +126,22 @@ public class Simulazione {
     private void printSystemState() {
         System.out.println("\n=== Stato del sistema ===");
         for (NodoIPN nodoIPN : nodiIPN) {
-            System.out.println("Nodo IPN " + nodoIPN.getId() +
-                    ": Capacità residua = " + nodoIPN.getL_z() +
-                    " Tempo di attesa in coda al nodo = " + flusso.getq_z_i());
+            StringBuilder stato = new StringBuilder()
+                    .append("Nodo IPN ").append(nodoIPN.getId())
+                    .append(": Capacità residua = ").append(nodoIPN.getL_z())
+                    .append("\n  Flussi in coda: ");
+
+            List<Flusso> flussiInCoda = nodoIPN.getFlussiInCoda();
+            if (flussiInCoda.isEmpty()) {
+                stato.append("nessuno");
+            } else {
+                for (Flusso flusso : flussiInCoda) {
+                    stato.append("\n    - Flusso ").append(flusso.getId())
+                            .append(" (tempo pre-elaborazione: ").append(flusso.getp_z_i()).append(")");
+                }
+            }
+
+            System.out.println(stato.toString());
         }
         System.out.println();
     }

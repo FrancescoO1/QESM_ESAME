@@ -10,7 +10,6 @@ public class MatchingGame {
     private final Map<NodoIPN, List<Flusso>> preferenceListNodo; //preference list di flussi del nodo IPN, non cambia ad ogni iterazione rimane statica
     private final Map<Flusso, List<NodoIPN>> preferenceListFlusso;  //preference list di nodi del flusso, cambia ad ogni iterazione
     private static final Random random = new Random();
-
     private Map<Flusso, NodoIPN> assegnazioniParziali = new HashMap<>();
 
     public MatchingGame(List<NodoSorgente> nodiSorgenti, List<NodoIPN> nodiIPN) {
@@ -21,11 +20,13 @@ public class MatchingGame {
         this.preferenceListNodo = new HashMap<>();
         this.preferenceListFlusso = new HashMap<>();
 
+        System.out.println("\n");
         initializePreferenceLists();
+        System.out.println("\n");
     }
 
     public double calcolaLatenzaRete() {
-        return random.nextDouble() * 0.5;
+        return 0.5;
     }
 
     private Map<NodoSorgente, Flusso> initializeFlussiPerSorgente(List<NodoSorgente> sorgenti) {
@@ -55,11 +56,12 @@ public class MatchingGame {
 
     public void aggiornaPreferenceListFlusso_V_i_z() {
         preferenceListFlusso.clear();
+        double latenzaRete = 0.5; //calcolo la latenza di rete una sola volta
         for (Flusso flusso : allFlussi) {
             List<NodoIPN> preferenceList = new ArrayList<>(nodiIPN);
             preferenceList.sort((nodo1, nodo2) -> {
-                double C_i_d_z1 = nodo1.calcolaC_i_z_d(flusso, calcolaLatenzaRete());
-                double C_i_d_z2 = nodo2.calcolaC_i_z_d(flusso, calcolaLatenzaRete());
+                double C_i_d_z1 = nodo1.calcolaC_i_z_d(flusso,latenzaRete);
+                double C_i_d_z2 = nodo2.calcolaC_i_z_d(flusso,latenzaRete);
                 return Double.compare(C_i_d_z1, C_i_d_z2);
             });
             preferenceListFlusso.put(flusso, preferenceList);
@@ -95,35 +97,35 @@ public class MatchingGame {
     }
 
 
-    public double calcolaPi() {
-        // Calcolo di pi come rapporto tra somma totale D_i e numero di flussi
-        double sommaDiTotale = allFlussi.stream() //avevo flussipersorgente.values().stream()
-                .mapToDouble(Flusso::calcolaD_i)
-                .sum();
-        return sommaDiTotale / allFlussi.size();
+    public double calcolaPi() { //Pi ora è un valore che assume un valore compreso tra 0 e 1, in base a quante allocazioni attive ci sono
+        // Conta i flussi che sforano la propria deadline
+        long flussiCheSforano = allFlussi.stream()
+                .filter(flusso -> flusso.calcolaD_i(flusso.getCapacita()))
+                .count();
+
+        // Calcola il rapporto tra i flussi che sforano e il totale
+        return (double) flussiCheSforano / allFlussi.size();
     }
 
-    public String calcolaUtilita() {
+    public Double calcolaUtilita() {
         // Calcolo di pi
         double pi = calcolaPi();
 
-        // Calcolo di A: somma degli elementi della matrice di allocazione
+        // Calcolo di A: somma degli elementi della matrice di allocazione, ovvero la somma di quanti uni sono presenti
         double A = nodiIPN.stream()
                 .flatMap(nodo -> preferenceListNodo.get(nodo).stream()) // Ottieni flussi associati al nodo
                 .count(); // Conta il totale delle associazioni attive
 
         if (A == 0) {
-            return "100.00%"; // Caso limite: nessuna allocazione attiva
+            return 100.00; // Caso limite: nessuna allocazione attiva
         }
 
         double somma = 0.0;
 
-        System.out.println("\n=====> A: " + A);
-
         // Calcolo della somma pesata dei tempi di completamento
         for (Flusso flusso : allFlussi) {
             for (NodoIPN nodo : nodiIPN) {
-                double latenzaRete = calcolaLatenzaRete(); // Se dipende da nodo/fluss, spostare dentro il ciclo
+                double latenzaRete = calcolaLatenzaRete(); // Se dipende da nodo/flusso, spostare dentro il ciclo
                 double C_i_d_z = nodo.calcolaC_i_z_d(flusso, latenzaRete);
                 double alpha_i_z = preferenceListNodo.get(nodo).contains(flusso) ? 1 : 0; // Valore di alpha
                 somma += C_i_d_z * alpha_i_z; // Accumula il prodotto pesato
@@ -131,15 +133,15 @@ public class MatchingGame {
         }
 
         // Calcolo dell'utilità
-        double utilita = 1 / (pi * somma / A);
+        double utilita = ((1 / ((pi * somma)/ A)) * 100);
 
         // Gestione di casi limite
         if (Double.isInfinite(utilita) || Double.isNaN(utilita)) {
-            return "100.00%"; // Ritorna massimo
+            return 100.00; // Ritorna massimo
         }
 
-        // Formattazione del risultato in percentuale
-        return String.format("%.2f%%", utilita * 100);
+        // rende il risultato di utilità in percentuale
+        return utilita;
     }
 
     public NodoIPN algoritmoMatching(Flusso flusso) {
@@ -148,21 +150,41 @@ public class MatchingGame {
         NodoIPN migliorNodo = null;
         double migliorTempoCompletamento = Double.MAX_VALUE;
 
+        // Prima rimuovi il flusso dalla coda del nodo precedente se esisteva
+        NodoIPN nodoPrecedente = assegnazioniParziali.get(flusso);
+        if (nodoPrecedente != null) {
+            nodoPrecedente.rimuoviFlussoInCoda(flusso);
+        }
+
         for (NodoIPN nodo : nodiIPN) {
             if (!nodo.haCapacitaSufficiente(flusso)) {
                 continue;
             }
 
+            // Aggiungi temporaneamente il flusso alla coda per calcolare il tempo di completamento
+            nodo.aggiungiFlussoInCoda(flusso);
+
             double latenzaRete = calcolaLatenzaRete();
             double tempoCompletamento = nodo.calcolaC_i_z_d(flusso, latenzaRete);
 
+            // Rimuovi il flusso dalla coda temporanea
+            nodo.rimuoviFlussoInCoda(flusso);
+
             if (tempoCompletamento < migliorTempoCompletamento) {
+                // Se abbiamo trovato un nodo migliore, rimuovi il flusso dal nodo precedente (se esiste)
+                if (migliorNodo != null) {
+                    migliorNodo.rimuoviFlussoInCoda(flusso);
+                }
                 migliorTempoCompletamento = tempoCompletamento;
                 migliorNodo = nodo;
             }
         }
 
         if (migliorNodo != null) {
+
+            // Aggiungi definitivamente il flusso alla coda del miglior nodo
+            migliorNodo.aggiungiFlussoInCoda(flusso);
+
             migliorNodo.CalcolaP_i_d_z(flusso);
             double latenzaRete = calcolaLatenzaRete();
             double C_i_d_z = migliorNodo.calcolaC_i_z_d(flusso, latenzaRete);
@@ -178,6 +200,16 @@ public class MatchingGame {
         return migliorNodo;
     }
 
+    public void aggiornaAssegnazioneParziale(Flusso flusso, NodoIPN nodoIPN) {
+        // Rimuovi il flusso dalla coda del nodo precedente se esisteva
+        NodoIPN nodoPrecedente = assegnazioniParziali.get(flusso);
+        if (nodoPrecedente != null && nodoPrecedente != nodoIPN) {
+            nodoPrecedente.rimuoviFlussoInCoda(flusso);
+        }
+
+        // Aggiorna l'assegnazione
+        assegnazioniParziali.put(flusso, nodoIPN);
+    }
 
     // Getters
     public List<Flusso> getFlussi() {
@@ -196,10 +228,6 @@ public class MatchingGame {
 
     public NodoIPN getAssegnazioneParziale(Flusso flusso) {
         return assegnazioniParziali.get(flusso);
-    }
-
-    public void aggiornaAssegnazioneParziale(Flusso flusso, NodoIPN nodoIPN) {
-        assegnazioniParziali.put(flusso, nodoIPN);
     }
 
 

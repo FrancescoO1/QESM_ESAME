@@ -180,12 +180,11 @@ public class ChartManager extends JFrame {
                     .mapToInt(sorgente -> sorgente.getFlussi().size())
                     .sum();
 
-            String utilityStr = matchingGame.calcolaUtilita().replace("%", "").trim();
-            Number number = decimalFormat.parse(utilityStr);
-            double utility = number.doubleValue() / 100.0;
+            // Ottieni direttamente il valore dell'utilità come double
+            double utility = matchingGame.calcolaUtilita();
 
             updateChart(chartIndex, totalFlows, utility);
-        } catch (ParseException e) {
+        } catch (Exception e) {
             System.err.println("Errore nel parsing dell'utilità: " + e.getMessage());
         }
     }

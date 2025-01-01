@@ -6,11 +6,6 @@ import java.util.*;
 import java.util.List;
 
 
-//TODO FAI I GRAFICI del paper in un'altra classe blaaa
-//TODO cambiare i nomi nell'interfaccia grafica e farli tutti in italiano
-//TODO provato a fare qualche grafico
-
-
 public class IPNInterface extends JFrame {
     private final MatchingGame matchingGame;
     private final List<NodoSorgente> nodiSorgente;
@@ -22,9 +17,7 @@ public class IPNInterface extends JFrame {
     private final NetworkPanel networkPanel;
     private final JPanel legendPanel;
     private final Map<NodoIPN, Double> initialCapacities;
-
     private final JPanel preferenceListPanel;
-
     private static int currentIteration = 0;
 
     public IPNInterface(MatchingGame matchingGame) {
@@ -162,7 +155,7 @@ public class IPNInterface extends JFrame {
         }
 
         //utilità
-        JLabel utilityLabel = new JLabel("Utilità del sistema: " + matchingGame.calcolaUtilita());
+        JLabel utilityLabel = new JLabel("Utilità del sistema: " + String.format("%.2f%%", matchingGame.calcolaUtilita()));
         utilityLabel.setFont(new Font("Arial", Font.PLAIN, 12));
         utilityLabel.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
         legendPanel.add(utilityLabel);
@@ -351,12 +344,29 @@ public class IPNInterface extends JFrame {
                 // Draw capacity and waiting time info
                 g2d.setColor(Color.BLACK);
                 String capacityInfo = String.format("Capacity: %.1f", ipn.getL_z());
-                String waitingTimeInfo = String.format("Wait Time: %.1f", flusso.getq_z_i());
+
+                // Calculate average waiting time for this IPN node
+                double avgWaitingTime = calculateWaitingTime(ipn);
+                String waitingTimeInfo = String.format("Wait Time: %.1f", avgWaitingTime);
+
                 g2d.drawString(capacityInfo, p.x + NODE_RADIUS + 10, p.y - 5);
                 g2d.drawString(waitingTimeInfo, p.x + NODE_RADIUS + 10, p.y + 15);
 
                 g2d.setColor(Color.BLUE);
             }
+        }
+
+        private double calculateWaitingTime(NodoIPN ipn) {
+            List<Flusso> flussiInCoda = ipn.getFlussiInCoda();
+            if (flussiInCoda.isEmpty()) {
+                return 0.0;
+            }
+
+            double totalWaitingTime = 0.0;
+            for (Flusso flusso : flussiInCoda) {
+                totalWaitingTime += flusso.calcolaQ_z_i(flusso, flussiInCoda);
+            }
+            return totalWaitingTime; //se volessi la media dovrei fare totalWaitingTime / flussiInCoda.size()
         }
 
         private void drawConnections(Graphics2D g2d) {
