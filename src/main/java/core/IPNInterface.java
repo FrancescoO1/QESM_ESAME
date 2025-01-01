@@ -139,6 +139,14 @@ public class IPNInterface extends JFrame {
         totalSourceLabel.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
         legendPanel.add(totalSourceLabel);
 
+        //mostra il numero di flussi rifiutati
+        Set<Flusso> flussiRifiutati = matchingGame.getFlussiRifiutati();
+        JLabel rejectedFlowsLabel = new JLabel("Rejected Flows: " + flussiRifiutati.size());
+        rejectedFlowsLabel.setFont(new Font("Arial", Font.PLAIN, 12));
+        rejectedFlowsLabel.setForeground(Color.RED);
+        rejectedFlowsLabel.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
+        legendPanel.add(rejectedFlowsLabel);
+
         legendPanel.add(Box.createVerticalStrut(10)); // Spazio tra le righe
 
         // Capacità iniziale dei nodi IPN
@@ -148,22 +156,30 @@ public class IPNInterface extends JFrame {
         legendPanel.add(initialCapacitiesLabel);
 
         for (NodoIPN ipn : nodiIPN) {
-            JLabel ipnCapacityLabel = new JLabel(String.format("IPN%d: %.1f", ipn.getId(), initialCapacities.get(ipn)));
+            double capacityPercentage = (ipn.getL_z() / initialCapacities.get(ipn)) * 100;
+            JLabel ipnCapacityLabel = new JLabel(String.format("IPN%d: %.1f (%.1f%% remaining)",
+                    ipn.getId(), ipn.getL_z(), capacityPercentage));
             ipnCapacityLabel.setFont(new Font("Arial", Font.PLAIN, 12));
             ipnCapacityLabel.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
             legendPanel.add(ipnCapacityLabel);
         }
 
-        //utilità
-        JLabel utilityLabel = new JLabel("Utilità del sistema: " + String.format("%.2f%%", matchingGame.calcolaUtilita()));
-        utilityLabel.setFont(new Font("Arial", Font.PLAIN, 12));
+        // Utilità
+        double utilita = matchingGame.calcolaUtilita();
+        JLabel utilityLabel = new JLabel(String.format("System Utility: %.2f%%", utilita));
+        utilityLabel.setFont(new Font("Arial", Font.BOLD, 12));
+        if (utilita < 50) {
+            utilityLabel.setForeground(Color.RED);
+        } else {
+            utilityLabel.setForeground(new Color(0, 128, 0)); // Dark green
+        }
         utilityLabel.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
         legendPanel.add(utilityLabel);
 
-        legendPanel.add(Box.createVerticalStrut(10)); // Spazio aggiuntivo in basso
+        legendPanel.add(Box.createVerticalStrut(10));
 
-        legendPanel.revalidate(); // Aggiorna il layout del pannello
-        legendPanel.repaint(); // Forza il ridisegno
+        legendPanel.revalidate();
+        legendPanel.repaint();
     }
 
     public void updatePreferenceLists() {

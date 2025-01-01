@@ -11,6 +11,8 @@ public class MatchingGame {
     private final Map<Flusso, List<NodoIPN>> preferenceListFlusso;  //preference list di nodi del flusso, cambia ad ogni iterazione
     private static final Random random = new Random();
     private Map<Flusso, NodoIPN> assegnazioniParziali = new HashMap<>();
+    private Set<Flusso> flussiRifiutati = new HashSet<>();
+
 
     public MatchingGame(List<NodoSorgente> nodiSorgenti, List<NodoIPN> nodiIPN) {
         this.nodiSorgenti = new ArrayList<>(nodiSorgenti);
@@ -97,51 +99,64 @@ public class MatchingGame {
     }
 
 
-    public double calcolaPi() { //Pi ora è un valore che assume un valore compreso tra 0 e 1, in base a quante allocazioni attive ci sono
-        // Conta i flussi che sforano la propria deadline
-        long flussiCheSforano = allFlussi.stream()
-                .filter(flusso -> flusso.calcolaD_i(flusso.getCapacita()))
+    public double calcolaPi() {
+        // Conta i flussi che sforano la propria deadline o sono stati rifiutati
+        long flussiProblematici = allFlussi.stream()
+                .filter(flusso -> {
+                    // Se il flusso è stato rifiutato, conta come problematico
+                    if (flussiRifiutati.contains(flusso)) {
+                        return true;
+                    }
+                    // Se il flusso è assegnato, verifica se sfora la deadline
+                    NodoIPN nodoAssegnato = assegnazioniParziali.get(flusso);
+                    if (nodoAssegnato != null) {
+                        return flusso.calcolaD_i(nodoAssegnato.calcolaC_i_z_d(flusso, calcolaLatenzaRete()));
+                    }
+                    // Se il flusso non è né rifiutato né assegnato, conta come problematico
+                    return true;
+                })
                 .count();
 
-        // Calcola il rapporto tra i flussi che sforano e il totale
-        return (double) flussiCheSforano / allFlussi.size();
+        // Calcola il rapporto tra i flussi problematici e il totale
+        return (double) flussiProblematici / allFlussi.size();
     }
-
     public Double calcolaUtilita() {
         // Calcolo di pi
         double pi = calcolaPi();
 
-        // Calcolo di A: somma degli elementi della matrice di allocazione, ovvero la somma di quanti uni sono presenti
-        double A = nodiIPN.stream()
-                .flatMap(nodo -> preferenceListNodo.get(nodo).stream()) // Ottieni flussi associati al nodo
-                .count(); // Conta il totale delle associazioni attive
+        // Calcolo di A: somma delle allocazioni attive
+        long allocazioniAttive = assegnazioniParziali.size();
 
-        if (A == 0) {
-            return 100.00; // Caso limite: nessuna allocazione attiva
+        // Se non ci sono allocazioni attive o tutti i flussi sono stati rifiutati
+        if (allocazioniAttive == 0 || flussiRifiutati.size() == allFlussi.size()) {
+            return 0.0; // Il sistema non sta facendo nulla di utile
         }
 
         double somma = 0.0;
 
         // Calcolo della somma pesata dei tempi di completamento
         for (Flusso flusso : allFlussi) {
-            for (NodoIPN nodo : nodiIPN) {
-                double latenzaRete = calcolaLatenzaRete(); // Se dipende da nodo/flusso, spostare dentro il ciclo
-                double C_i_d_z = nodo.calcolaC_i_z_d(flusso, latenzaRete);
-                double alpha_i_z = preferenceListNodo.get(nodo).contains(flusso) ? 1 : 0; // Valore di alpha
-                somma += C_i_d_z * alpha_i_z; // Accumula il prodotto pesato
+            NodoIPN nodoAssegnato = assegnazioniParziali.get(flusso);
+            if (nodoAssegnato != null) {
+                double latenzaRete = calcolaLatenzaRete();
+                double C_i_d_z = nodoAssegnato.calcolaC_i_z_d(flusso, latenzaRete);
+                somma += C_i_d_z;
+            } else if (flussiRifiutati.contains(flusso)) {
+                // Penalizza l'utilità per i flussi rifiutati
+                somma += flusso.getB_i() * 2; // Aggiungiamo una penalità proporzionale alla deadline
             }
         }
 
-        // Calcolo dell'utilità
-        double utilita = ((1 / ((pi * somma)/ A)) * 100);
+        // Calcolo dell'utilità considerando anche i flussi rifiutati
+        double utilita = ((1 / ((pi * somma) / allocazioniAttive)) * 100);
 
         // Gestione di casi limite
         if (Double.isInfinite(utilita) || Double.isNaN(utilita)) {
-            return 100.00; // Ritorna massimo
+            return 0.0; // Se c'è un problema nel calcolo, il sistema non è utile
         }
 
-        // rende il risultato di utilità in percentuale
-        return utilita;
+        // Limita l'utilità al range [0, 100]
+        return Math.min(100.0, Math.max(0.0, utilita));
     }
 
     public NodoIPN algoritmoMatching(Flusso flusso) {
@@ -156,10 +171,14 @@ public class MatchingGame {
             nodoPrecedente.rimuoviFlussoInCoda(flusso);
         }
 
+        boolean trovataCapacitaSufficiente = false;
+
         for (NodoIPN nodo : nodiIPN) {
             if (!nodo.haCapacitaSufficiente(flusso)) {
                 continue;
             }
+
+            trovataCapacitaSufficiente = true;
 
             // Aggiungi temporaneamente il flusso alla coda per calcolare il tempo di completamento
             nodo.aggiungiFlussoInCoda(flusso);
@@ -171,29 +190,29 @@ public class MatchingGame {
             nodo.rimuoviFlussoInCoda(flusso);
 
             if (tempoCompletamento < migliorTempoCompletamento) {
-                // Se abbiamo trovato un nodo migliore, rimuovi il flusso dal nodo precedente (se esiste)
-                if (migliorNodo != null) {
-                    migliorNodo.rimuoviFlussoInCoda(flusso);
-                }
                 migliorTempoCompletamento = tempoCompletamento;
                 migliorNodo = nodo;
             }
         }
+        // Se nessun nodo ha capacità sufficiente, aggiungi il flusso a quelli rifiutati
+        if (!trovataCapacitaSufficiente) {
+            flussiRifiutati.add(flusso);
+            // Rimuovi eventuali assegnazioni precedenti
+            assegnazioniParziali.remove(flusso);
+            return null;
+        }
 
         if (migliorNodo != null) {
-
             // Aggiungi definitivamente il flusso alla coda del miglior nodo
             migliorNodo.aggiungiFlussoInCoda(flusso);
-
             migliorNodo.CalcolaP_i_d_z(flusso);
-            double latenzaRete = calcolaLatenzaRete();
-            double C_i_d_z = migliorNodo.calcolaC_i_z_d(flusso, latenzaRete);
-            flusso.calcolaT_i(C_i_d_z);
+            flusso.calcolaT_i(migliorTempoCompletamento);
             migliorNodo.decrementaCapacita(flusso.getCapacita());
             // Aggiorna assegnazione parziale
             aggiornaAssegnazioneParziale(flusso, migliorNodo);
             preferenceListNodo.get(migliorNodo).add(flusso);
-
+            // Rimuovi il flusso dai rifiutati se era stato precedentemente rifiutato
+            flussiRifiutati.remove(flusso);
         }
 
         aggiornaPreferenceListFlusso_V_i_z();
@@ -228,6 +247,12 @@ public class MatchingGame {
 
     public NodoIPN getAssegnazioneParziale(Flusso flusso) {
         return assegnazioniParziali.get(flusso);
+    }
+
+
+    // metodo per ottenere i flussi rifiutati
+    public Set<Flusso> getFlussiRifiutati() {
+        return new HashSet<>(flussiRifiutati);
     }
 
 

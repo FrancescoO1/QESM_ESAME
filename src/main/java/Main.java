@@ -3,20 +3,19 @@ import core.*;
 import javax.swing.*;
 import java.util.*;
 
-//TODO FAI I GRAFICI del paper in un'altra classe HO FATTO CORRETTO
+
+//TODO PER ORA FUNZIONAAAA
+//TODO FAI I GRAFICI del paper in un'altra classe
 //TODO cambiare i nomi nell'interfaccia grafica e farli tutti in italiano
-//TODO utilita non sincrona tra Ipn interface e simulazione, nell'interfaccia si parte con valori altissimi di utilità e poi si allinea con il log forse
-//il log funziona ho un'utilità del sistema che pressocchè non cambia. rimane stabile.
-
-
+//TODO sperimentare per vedere come cambia utilità, provare a rendere randomica la capacità dei nodi.
 
 public class Main {
 
     private static final int NUMERO_NODI_IPN = 4;
-    private static final int NUMERO_ITERAZIONI = 4; //se ho troppe iterazioni l'utilità aumenta del sistema dopo essere diminuita, perchè pi torna a zero dato che i flussi non computano più per cui non ho flussi che sforano la deadline
+    private static final int NUMERO_ITERAZIONI = 8;
     private static final int NUMERO_FLUSSI_PER_NODO_SORGENTE = 3;
     private static final int NUMERO_NODI_SORGENTE = 6;
-    private static final int CAPACITA_DISPONIBILE = 40;
+    private static final int CAPACITA_DISPONIBILE = 50;
     private static final int CAPACITA_FLUSSO = 2;
     private static final int SCADENZA_FLUSSO = 1;  //deve essere bassa perchè se fosse alta avrei sicuramente che C_i_d_z è minore di B_i, per cui Pi diventa nullo, perchè D è zero su tutti i flussi.
     private static final int NUMERO_GRAFICI = 3;
