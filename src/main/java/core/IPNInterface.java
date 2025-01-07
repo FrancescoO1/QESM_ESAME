@@ -165,10 +165,10 @@ public class IPNInterface extends JFrame {
         }
 
         // Utilità
-        double utilita = matchingGame.calcolaUtilita();
-        JLabel utilityLabel = new JLabel(String.format("System Utility: %.2f%%", utilita));
+        matchingGame.calcolaUtilita();
+        JLabel utilityLabel = new JLabel(String.format("System Utility: %.2f%%", MatchingGame.utilita));
         utilityLabel.setFont(new Font("Arial", Font.BOLD, 12));
-        if (utilita < 50) {
+        if (MatchingGame.utilita < 50) {
             utilityLabel.setForeground(Color.RED);
         } else {
             utilityLabel.setForeground(new Color(0, 128, 0)); // Dark green

@@ -4,7 +4,7 @@ import javax.swing.*;
 import java.util.*;
 
 
-//TODO PER ORA FUNZIONAAAA
+//TODO PER ORA FUNZIONAAAA, guarda roba statica ecc teoria
 //TODO FAI I GRAFICI del paper in un'altra classe
 //TODO cambiare i nomi nell'interfaccia grafica e farli tutti in italiano
 //TODO sperimentare per vedere come cambia utilità, provare a rendere randomica la capacità dei nodi.
@@ -21,7 +21,12 @@ public class Main {
     private static final int NUMERO_GRAFICI = 3;
     private static final Random random = new Random();
 
+
+
     public static void main(String[] args) {
+        
+        MatchingGame.calcolaUtilita();
+        System.out.println(MatchingGame.utilita);;
 
         // Creazione di nodi IPN con capacità disponibili
         List<NodoIPN> nodiIPN = new ArrayList<>();

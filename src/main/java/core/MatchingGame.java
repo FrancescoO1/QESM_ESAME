@@ -4,14 +4,15 @@ import java.util.*;
 
 public class MatchingGame {
     private final Map<NodoSorgente, Flusso> flussiPerSorgente;
-    private final Set<Flusso> allFlussi; //serve per tenere traccia di tutti i flussi
+    private static Set<Flusso> allFlussi; //serve per tenere traccia di tutti i flussi
     private final List<NodoIPN> nodiIPN;
     private final List<NodoSorgente> nodiSorgenti;
     private final Map<NodoIPN, List<Flusso>> preferenceListNodo; //preference list di flussi del nodo IPN, non cambia ad ogni iterazione rimane statica
     private final Map<Flusso, List<NodoIPN>> preferenceListFlusso;  //preference list di nodi del flusso, cambia ad ogni iterazione
     private static final Random random = new Random();
-    private Map<Flusso, NodoIPN> assegnazioniParziali = new HashMap<>();
-    private Set<Flusso> flussiRifiutati = new HashSet<>();
+    private static Map<Flusso, NodoIPN> assegnazioniParziali = new HashMap<>();
+    private static Set<Flusso> flussiRifiutati = new HashSet<>();
+    public static double utilita;
 
 
     public MatchingGame(List<NodoSorgente> nodiSorgenti, List<NodoIPN> nodiIPN) {
@@ -27,7 +28,7 @@ public class MatchingGame {
         System.out.println("\n");
     }
 
-    public double calcolaLatenzaRete() {
+    public static double calcolaLatenzaRete() {
         return 0.5;
     }
 
@@ -99,7 +100,7 @@ public class MatchingGame {
     }
 
 
-    public double calcolaPi() {
+    public static double calcolaPi() {
         // Conta i flussi che sforano la propria deadline o sono stati rifiutati
         long flussiProblematici = allFlussi.stream()
                 .filter(flusso -> {
@@ -120,7 +121,7 @@ public class MatchingGame {
         // Calcola il rapporto tra i flussi problematici e il totale
         return (double) flussiProblematici / allFlussi.size();
     }
-    public Double calcolaUtilita() {
+    public static void calcolaUtilita() {
         // Calcolo di pi
         double pi = calcolaPi();
 
@@ -129,7 +130,7 @@ public class MatchingGame {
 
         // Se non ci sono allocazioni attive o tutti i flussi sono stati rifiutati
         if (allocazioniAttive == 0 || flussiRifiutati.size() == allFlussi.size()) {
-            return 0.0; // Il sistema non sta facendo nulla di utile
+            utilita = 0.0; // Il sistema non sta facendo nulla di utile
         }
 
         double somma = 0.0;
@@ -148,15 +149,15 @@ public class MatchingGame {
         }
 
         // Calcolo dell'utilità considerando anche i flussi rifiutati
-        double utilita = ((1 / ((pi * somma) / allocazioniAttive)) * 100);
+        double localUtilità = ((1 / ((pi * somma) / allocazioniAttive)) * 100);
 
         // Gestione di casi limite
-        if (Double.isInfinite(utilita) || Double.isNaN(utilita)) {
-            return 0.0; // Se c'è un problema nel calcolo, il sistema non è utile
+        if (Double.isInfinite(localUtilità) || Double.isNaN(localUtilità)) {
+            utilita = 0.0; // Se c'è un problema nel calcolo, il sistema non è utile
         }
 
         // Limita l'utilità al range [0, 100]
-        return Math.min(100.0, Math.max(0.0, utilita));
+        utilita = Math.min(100.0, Math.max(0.0, localUtilità));
     }
 
     public NodoIPN algoritmoMatching(Flusso flusso) {

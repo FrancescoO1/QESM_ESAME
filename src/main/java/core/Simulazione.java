@@ -87,8 +87,8 @@ public class Simulazione {
                     ipnInterface.updatePreferenceLists();
 
                     // Calcola l'utilità del sistema
-                    Double utilita = matchingGame.calcolaUtilita();
-                    System.out.println("Utilità del sistema: " + utilita);
+                    matchingGame.calcolaUtilita();
+                    System.out.println("--------------------------------------------------------------------------------Utilità del sistema: " + MatchingGame.utilita);
 
                     // Aggiorna tutti i grafici nel ChartManager
                     final int iterazioneFinal = iterazione;

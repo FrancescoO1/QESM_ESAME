@@ -181,9 +181,9 @@ public class ChartManager extends JFrame {
                     .sum();
 
             // Ottieni direttamente il valore dell'utilità come double
-            double utility = matchingGame.calcolaUtilita();
+            matchingGame.calcolaUtilita();
 
-            updateChart(chartIndex, totalFlows, utility);
+            updateChart(chartIndex, totalFlows, MatchingGame.utilita);
         } catch (Exception e) {
             System.err.println("Errore nel parsing dell'utilità: " + e.getMessage());
         }
