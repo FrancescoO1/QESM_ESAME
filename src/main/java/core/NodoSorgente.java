@@ -39,6 +39,15 @@ public class NodoSorgente {
         return null;
     }
 
+    //il codice per calcolare il valore medio di B_i:
+    public double calcolaB_iMedio() {
+        double sum = 0;
+        for (Flusso flusso : flussi) {
+            sum += flusso.getB_i();
+        }
+        return sum / flussi.size();
+    }
+
     public int getId() {
         return id;
     }
