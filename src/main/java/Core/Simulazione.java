@@ -30,15 +30,11 @@ class Simulazione {
                 nodo.resetDisponibilita();
             }
             Matching.eseguiMatching(utenti, nodi);
-
-            //Matching.rimuoviFlussiDaNodiNonDisponibili(utenti, nodi);
-
             double utilita = Matching.calcolaUtilita(utenti, nodi);
             Utilita_finale = utilita;
             System.out.println("Utilità: " + Math.round(utilita*10)/10 + " %");
-
             System.out.println();
-            Matching.rimuoviFlussiDaNodiNonDisponibili(utenti, nodi); //messo qua
+            Matching.rimuoviFlussiDaNodiNonDisponibili(utenti, nodi);
 
             // Raccolgo tutti i flussi rimanenti per il controllo della stabilità
             List<Flusso> flussiRimanenti = new ArrayList<>();

@@ -479,7 +479,7 @@ public class Grafici {
             SimulationData data = simulationResults.get(i);
             System.out.printf("Simulazione %d:\n", i + 1);
             System.out.printf(" QoS Denied Probability: %.2f\n", data.qosProbability);
-            System.out.printf("  Utility: %.2f\n", data.utility);
+            System.out.printf("Mean value of processing time: %.2f\n", data.avg_p_z_i);
         }
     }
 }

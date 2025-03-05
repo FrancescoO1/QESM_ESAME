@@ -4,7 +4,6 @@ import java.util.*;
 //ricorda:
 //Una variabile public è accessibile da qualsiasi parte del programma, mentre una variabile private può essere utilizzata solo all'interno della classe in cui è dichiarata.
 //il paper parla di prendere le scadenze alte, mentre per minimizzare il ritardo bisognerebbe prendere quelle con scadenza più basse. (parlarne con la pic) il resto funziona tutto dal punto di vista teorico.
-//TODO PRIMA SIMULAZIONE A = 16 PERCHÈ SVUOTO LE CODE PRIMA DI SEGNARE IL RISULTATO, PENSO DI AVER RISOLTO MA RICONTROLLA. (chiamata in simulazione)
 
 public class Matching {
 
