@@ -85,7 +85,7 @@ public class Main {
 
     private static List<Utente> creaUtenti1() {
         List<Utente> utenti = new ArrayList<>();
-
+/*
         // Utente 0 - Set 1
         Utente u0 = new Utente(0);
         u0.aggiungiFlusso(new Flusso(2, 0, 2, 12, 0, 0));
@@ -114,6 +114,56 @@ public class Main {
         u2.aggiungiFlusso(new Flusso(5, 0, 3, 12, 2, 3));
         u2.aggiungiFlusso(new Flusso(2, 0, 1, 11, 2, 4));
         u2.aggiungiFlusso(new Flusso(3, 0, 2, 11, 2, 5));
+        utenti.add(u2);
+
+        return utenti;
+
+ */
+
+        // Utente 0 - Set 1
+        Utente u0 = new Utente(0);
+        u0.aggiungiFlusso(new Flusso(2, 0, 2, 12, 0, 0));
+        u0.aggiungiFlusso(new Flusso(5, 0, 3, 12, 0, 1));
+        u0.aggiungiFlusso(new Flusso(3, 0, 2, 11, 0, 2));
+        u0.aggiungiFlusso(new Flusso(4, 0, 2, 11, 0, 3));
+        u0.aggiungiFlusso(new Flusso(5, 0, 3, 11, 0, 4));
+        u0.aggiungiFlusso(new Flusso(2, 0, 1, 12, 0, 5));
+        u0.aggiungiFlusso(new Flusso(3, 0, 2, 11, 0, 6));
+        u0.aggiungiFlusso(new Flusso(4, 0, 2, 11, 0, 7));
+        u0.aggiungiFlusso(new Flusso(5, 0, 3, 11, 0, 8));
+        u0.aggiungiFlusso(new Flusso(2, 0, 1, 12, 0, 9));
+        u0.aggiungiFlusso(new Flusso(3, 0, 2, 11, 0, 10));
+
+        utenti.add(u0);
+
+        // Utente 1 - Set 1
+        Utente u1 = new Utente(1);
+        u1.aggiungiFlusso(new Flusso(4, 0, 1, 11, 1, 0));
+        u1.aggiungiFlusso(new Flusso(2, 0, 2, 12, 1, 1));
+        u1.aggiungiFlusso(new Flusso(3, 0, 2, 8, 1, 2));
+        u1.aggiungiFlusso(new Flusso(4, 0, 2, 11, 1, 3));
+        u1.aggiungiFlusso(new Flusso(5, 0, 3, 11, 1, 4));
+        u1.aggiungiFlusso(new Flusso(2, 0, 1, 11, 1, 5));
+        u1.aggiungiFlusso(new Flusso(3, 0, 2, 11, 1, 6));
+        u1.aggiungiFlusso(new Flusso(4, 0, 2, 11, 1, 7));
+        u1.aggiungiFlusso(new Flusso(5, 0, 3, 11, 1, 8));
+        u1.aggiungiFlusso(new Flusso(2, 0, 1, 12, 1, 9));
+        u1.aggiungiFlusso(new Flusso(3, 0, 2, 11, 1, 10));
+        utenti.add(u1);
+
+        // Utente 2 - Set 1
+        Utente u2 = new Utente(2);
+        u2.aggiungiFlusso(new Flusso(2, 0, 1, 8, 2, 0));
+        u2.aggiungiFlusso(new Flusso(3, 0, 2, 12, 2, 1));
+        u2.aggiungiFlusso(new Flusso(4, 0, 2, 11, 2, 2));
+        u2.aggiungiFlusso(new Flusso(5, 0, 3, 12, 2, 3));
+        u2.aggiungiFlusso(new Flusso(2, 0, 1, 11, 2, 4));
+        u2.aggiungiFlusso(new Flusso(3, 0, 2, 11, 2, 5));
+        u2.aggiungiFlusso(new Flusso(4, 0, 2, 11, 2, 6));
+        u2.aggiungiFlusso(new Flusso(5, 0, 3, 11, 2, 7));
+        u2.aggiungiFlusso(new Flusso(2, 0, 1, 12, 2, 8));
+        u2.aggiungiFlusso(new Flusso(3, 0, 2, 11, 2, 9));
+        u2.aggiungiFlusso(new Flusso(4, 0, 2, 11, 2, 10));
         utenti.add(u2);
 
         return utenti;
